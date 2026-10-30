@@ -44,6 +44,7 @@ nav a:hover{color:var(--gold)}
 .fc{width:100%;background:#0a0e17;border:1px solid var(--line);padding:11px;color:#fff;border-radius:8px}
 .ban{display:none;position:fixed;inset:0;background:#000;z-index:999;color:var(--red);justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px}
 footer{text-align:center;font-size:11px;padding:30px 5% 10px}
+.row2{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}.row2 b{color:var(--gold)}
 </style></head>
 <body>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="margin-top:16px;color:#fff">Aapka account admin dwara ban kar diya gaya hai.</p></div>
@@ -60,6 +61,7 @@ footer{text-align:center;font-size:11px;padding:30px 5% 10px}
 <div class="container" id="main">
   <h2 class="title">Full Map Tournaments</h2><div class="grid" id="gridMap"></div>
   <h2 class="title">Clash Squad Tournaments</h2><div class="grid" id="gridCS"></div>
+  <h2 class="title">Full Map Rewards (Top 15)</h2><div class="card" id="rewardBox"></div>
 </div>
 <footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
 <nav>
@@ -72,13 +74,13 @@ footer{text-align:center;font-size:11px;padding:30px 5% 10px}
   <form onsubmit="confirmEntry(event)">
     <div class="fg"><label>Free Fire UID</label><input id="pUID" class="fc" required pattern="[0-9]{6,15}" placeholder="Sirf numbers"></div>
     <div class="fg"><label>In-Game Name</label><input id="pIGN" class="fc" required maxlength="40"></div>
-    <div class="fg" id="teamBox" style="display:none"><label>Teammates (Name + UID)</label><textarea id="pTeam" class="fc" rows="3" placeholder="Player2 (UID: 7281), Player3 (UID: 9301)"></textarea></div>
+    <div class="fg" id="teamBox" style="display:none"><label>Teammates ke Name + UID (Squad: 3 players)</label><textarea id="pTeam" class="fc" rows="3" placeholder="Player2 (UID: 7281), Player3 (UID: 9301)"></textarea></div>
     <button class="btn" id="joinBtn" type="submit">Confirm Entry</button>
   </form></div></div>
 <div class="modal" id="walletModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
   <h2 class="title" style="margin-top:0">Wallet</h2>
   <p style="margin-bottom:10px;font-size:14px">e-Sewa se paisa bhejo, Reference ID neeche daalo. Admin approve karega to coins add honge.</p>
-  <img src="qr.png" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:190px;margin:0 auto 14px;border-radius:10px">
+  <img src="qr.jpeg" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:190px;margin:0 auto 14px;border-radius:10px">
   <form onsubmit="submitPayment(event)">
     <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
     <div class="fg"><label>Amount Paid (NPR)</label><input id="payAmt" type="number" min="1" class="fc" required></div>
@@ -92,20 +94,13 @@ footer{text-align:center;font-size:11px;padding:30px 5% 10px}
     <button class="btn" type="submit">Request Withdrawal</button>
   </form></div></div>
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxuQwPiu4mvhq9eMBouXMEAGsT7URBtu-9G81MdFFQ1ZgJ050hb-XCfzMOP9zoLtJ0/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbze0UijWjuTgLUPe2kq2wF4Fve4lD9WdlHMhOm0hwi8B9H0mRxU4RQ9x84q4O37qYlr/exec";
 const CLIENT_ID = "199209878392-1saa86hi59blkatcgrpn9dra3s0jgucr.apps.googleusercontent.com";
 
-// ⚠️ Yahi fee/max Code.gs ke MATCHES se match hona chahiye (asli fee server hi lagata hai)
-const MATCHES = [
-  {id:'f-solo', name:'Solo Warriors (Full Map)', fee:25, max:48, mode:'Solo', type:'MAP', badge:'SOLO', color:'#ff4a5a'},
-  {id:'f-duo', name:'Duo Assault (Full Map)', fee:50, max:24, mode:'Duo', type:'MAP', badge:'DUO', color:'#e67e22'},
-  {id:'f-squad', name:'Squad Clan Wars (Full Map)', fee:100, max:12, mode:'Squad', type:'MAP', badge:'SQUAD', color:'#9b59b6'},
-  {id:'c-alpha', name:'CS Squad Alpha', fee:80, max:12, mode:'Squad', type:'CS', badge:'SQUAD', color:'#9b59b6', time:'07:00 PM'},
-  {id:'c-omega', name:'CS Squad Omega', fee:150, max:12, mode:'Squad', type:'CS', badge:'SQUAD', color:'#9b59b6', time:'09:30 PM'}
-];
+let MATCHES = [], REWARDS = [];
 const MSG = {ROOM_FULL:'Room full ho gaya', LOW_BALANCE:'Coins kam hain', ALREADY_JOINED:'Aap pehle se join ho', BANNED:'Account banned hai',
   AUTH_ERROR:'Login expire ho gaya, dobara sign in karo', INVALID:'Galat data', DUPLICATE_UTR:'Ye Reference ID pehle use ho chuka',
-  MIN_LIMIT_ERROR:'Minimum 50 coins', INSUFFICIENT_BALANCE:'Balance kam hai', ERROR:'Server error'};
+  MIN_LIMIT_ERROR:'Minimum 50 coins', INSUFFICIENT_BALANCE:'Balance kam hai', ERROR:'Server error', TEAM_REQUIRED:'Squad ke 3 teammates ki Name + UID likho'};
 const $ = id => document.getElementById(id);
 let token = sessionStorage.getItem('tok') || '', userName = sessionStorage.getItem('nm') || '', cur = null;
 
@@ -144,7 +139,7 @@ async function enter() {
   $('main').style.display = 'block';
   $('logoutBtn').style.display = 'block';
   $('coins').innerText = d.coins;
-  loadSlots();
+  loadConfig();
 }
 
 function logout(msg) {
@@ -154,16 +149,33 @@ function logout(msg) {
   if (typeof msg === 'string') alert(msg);
 }
 
-const PRIZE={'f-solo':800,'f-duo':800,'f-squad':800,'c-alpha':600,'c-omega':1200}; // prize pool apne hisaab se badlo (sirf display)
+const COLORS = {Solo:'#ff3d4f', Duo:'#e67e22', Squad:'#9b59b6'};
+async function loadConfig() {
+  try {
+    const c = await (await fetch(WEB_APP_URL + '?action=getConfig')).json();
+    MATCHES = c.matches.map((m, i) => ({...m, id: 'm' + i})); REWARDS = c.rewards;
+    renderCards(); renderRewards(); loadSlots();
+  } catch (e) { console.error('Config error', e); }
+}
 function renderCards() {
+  $('gridMap').innerHTML = ''; $('gridCS').innerHTML = '';
   MATCHES.forEach(m => {
     $(m.type === 'CS' ? 'gridCS' : 'gridMap').insertAdjacentHTML('beforeend',
-      `<div class="card"><div class="ct"><span class="tag" style="background:${m.color}">${m.badge}</span><span>${m.time ? 'Starts ' + m.time : 'Full Map'}</span></div>
+      `<div class="card"><div class="ct"><span class="tag" style="background:${COLORS[m.mode] || '#555'}">${String(m.mode).toUpperCase()}</span><span>${m.time ? 'Starts ' + m.time : 'Time soon'}</span></div>
       <h3>${m.name}</h3>
-      <div class="stats"><div><small>ENTRY</small><b>${m.fee}</b></div><div><small>PRIZE POOL</small><b class="gold">${PRIZE[m.id]}</b></div><div><small>SLOTS</small><b><span id="slot-${m.id}">0</span>/${m.max}</b></div></div>
+      <div class="stats"><div><small>ENTRY</small><b>${m.fee}</b></div><div><small>PRIZE POOL</small><b class="gold">${m.prize}</b></div><div><small>${m.type === 'CS' ? 'TEAMS' : 'SLOTS'}</small><b><span id="slot-${m.id}">0</span>/${m.max}</b></div></div>
       <div class="bar"><div class="fill" id="bar-${m.id}"></div></div>
       <button class="btn" id="btn-${m.id}" onclick="openMatch('${m.id}')">Join Match</button></div>`);
   });
+}
+function renderRewards() {
+  let h = '', i = 0;
+  while (i < REWARDS.length) {
+    let j = i; while (j + 1 < REWARDS.length && REWARDS[j + 1] === REWARDS[i]) j++;
+    h += `<div class="row2"><span>${i === j ? 'Position #' + (i + 1) : 'Position #' + (i + 1) + ' - #' + (j + 1)}</span><b>${REWARDS[i]} Coins</b></div>`;
+    i = j + 1;
+  }
+  $('rewardBox').innerHTML = h;
 }
 
 async function loadSlots() {
@@ -183,6 +195,7 @@ function openMatch(id) {
   cur = MATCHES.find(m => m.id === id);
   $('mTitle').innerText = cur.name + ' — ' + cur.fee + ' Coins';
   $('teamBox').style.display = cur.mode === 'Solo' ? 'none' : 'block';
+  $('pTeam').required = cur.mode !== 'Solo';
   $('matchModal').style.display = 'flex';
 }
 function openWallet() { if (!token) return alert('Pehle sign in karo'); $('walletModal').style.display = 'flex'; }
@@ -222,7 +235,6 @@ function submitWithdrawal(e) {
   });
 }
 
-renderCards();
 if (token) enter();
 </script>
 </body>

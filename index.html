@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RRR Tournament</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg:#0a0e17;--card:#131a29;--line:#222c42;--gold:#ffb400;--red:#ff3d4f;--txt:#9aa6bd;--w:#fff}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+h1,h2,h3,.o{font-family:'Oswald',sans-serif;letter-spacing:.5px}
+body{background:var(--bg);color:var(--txt);padding-bottom:78px}
+header{position:sticky;top:0;z-index:50;background:rgba(10,14,23,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 5%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-family:'Oswald';font-size:24px;font-weight:700;color:var(--w)}.logo b{color:var(--gold)}
+.coin{background:#1c2438;border:1px solid var(--gold);color:var(--gold);padding:6px 14px;border-radius:30px;font-weight:600;font-size:14px}
+.hero{padding:44px 6% 36px;text-align:center;background:radial-gradient(circle at 50% 0,#2a1a05 0,#0a0e17 70%)}
+.hero h1{font-size:clamp(34px,8vw,60px);color:var(--w);line-height:1.1}.hero h1 span{color:var(--gold)}
+.hero p{margin:10px auto 0;max-width:460px}
+.steps{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.steps div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--w)}.steps b{color:var(--gold)}
+.auth-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 22px;margin:24px auto;max-width:400px;text-align:center}
+.auth-box h2{color:var(--w);margin-bottom:8px}
+.container{max-width:1100px;margin:0 auto;padding:0 5%;display:none}
+.title{font-size:22px;color:var(--w);margin:28px 0 14px;display:flex;align-items:center;gap:10px;text-transform:uppercase}
+.title:before{content:"";width:5px;height:22px;background:var(--gold);border-radius:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;transition:.25s}
+.card:hover{transform:translateY(-3px);border-color:var(--gold)}
+.ct{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.tag{color:#fff;font-weight:600;padding:3px 10px;border-radius:20px}
+.card h3{color:var(--w);font-size:22px;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#0e1422;border-radius:10px;padding:12px;text-align:center}
+.stats small{display:block;font-size:10px;letter-spacing:1px}.stats b{color:var(--w);font-size:16px}.stats .gold{color:var(--gold)}
+.bar{background:#0e1422;height:6px;border-radius:3px;margin:14px 0 0;overflow:hidden}
+.fill{background:linear-gradient(90deg,var(--gold),var(--red));height:100%;width:0;transition:.4s}
+.btn{display:block;width:100%;background:linear-gradient(90deg,var(--gold),#ff8a00);color:#111;border:0;padding:13px;font-size:15px;font-weight:700;cursor:pointer;border-radius:10px;text-transform:uppercase;margin-top:14px;font-family:'Oswald'}
+.btn:disabled{background:#2a3350;color:#7b86a3;cursor:not-allowed}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:#0e1422;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 0}
+nav a{color:var(--txt);font-size:12px;text-align:center;cursor:pointer;flex:1;text-decoration:none}nav a span{display:block;font-size:20px}
+nav a:hover{color:var(--gold)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;justify-content:center;align-items:center;overflow:auto}
+.modal-c{background:var(--card);border:1px solid var(--line);width:94%;max-width:480px;border-radius:16px;padding:24px;position:relative;margin:20px 0}
+.x{position:absolute;top:10px;right:16px;font-size:28px;color:#fff;cursor:pointer}
+.fg{margin-bottom:12px}.fg label{display:block;margin-bottom:4px;color:var(--w);font-size:13px}
+.fc{width:100%;background:#0a0e17;border:1px solid var(--line);padding:11px;color:#fff;border-radius:8px}
+.ban{display:none;position:fixed;inset:0;background:#000;z-index:999;color:var(--red);justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px}
+footer{text-align:center;font-size:11px;padding:30px 5% 10px}
+</style></head>
+<body>
+<div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="margin-top:16px;color:#fff">Aapka account admin dwara ban kar diya gaya hai.</p></div>
+<header><div class="logo">RRR<b>TOURNAMENT</b></div><div class="coin">Coins: <span id="coins">0</span></div></header>
+<section class="hero">
+  <h1>PLAY. COMPETE. <span>WIN.</span></h1>
+  <p>Nepal's Free Fire tournament arena. Solo, Duo, Squad aur Clash Squad matches.</p>
+  <div class="steps"><div><b>1</b> Sign in</div><div><b>2</b> Coins add karo</div><div><b>3</b> Match join karo</div></div>
+</section>
+<div class="auth-box" id="loginBox">
+  <h2>PLAYER LOGIN</h2><p style="font-size:14px">Tournament join karne ke liye Google se sign in karo.</p>
+  <button class="btn" onclick="loginWithGoogle()">Sign in with Google</button>
+</div>
+<div class="container" id="main">
+  <h2 class="title">Full Map Tournaments</h2><div class="grid" id="gridMap"></div>
+  <h2 class="title">Clash Squad Tournaments</h2><div class="grid" id="gridCS"></div>
+</div>
+<footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
+<nav>
+  <a onclick="window.scrollTo(0,0)"><span>🏆</span>Matches</a>
+  <a onclick="openWallet()"><span>💳</span>Wallet</a>
+  <a id="logoutBtn" onclick="logout()" style="display:none"><span>🚪</span>Logout</a>
+</nav>
+<div class="modal" id="matchModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
+  <h2 class="title" id="mTitle" style="margin-top:0">Join Match</h2>
+  <form onsubmit="confirmEntry(event)">
+    <div class="fg"><label>Free Fire UID</label><input id="pUID" class="fc" required pattern="[0-9]{6,15}" placeholder="Sirf numbers"></div>
+    <div class="fg"><label>In-Game Name</label><input id="pIGN" class="fc" required maxlength="40"></div>
+    <div class="fg" id="teamBox" style="display:none"><label>Teammates (Name + UID)</label><textarea id="pTeam" class="fc" rows="3" placeholder="Player2 (UID: 7281), Player3 (UID: 9301)"></textarea></div>
+    <button class="btn" id="joinBtn" type="submit">Confirm Entry</button>
+  </form></div></div>
+<div class="modal" id="walletModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
+  <h2 class="title" style="margin-top:0">Wallet</h2>
+  <p style="margin-bottom:10px;font-size:14px">e-Sewa se paisa bhejo, Reference ID neeche daalo. Admin approve karega to coins add honge.</p>
+  <img src="qr.png" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:190px;margin:0 auto 14px;border-radius:10px">
+  <form onsubmit="submitPayment(event)">
+    <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
+    <div class="fg"><label>Amount Paid (NPR)</label><input id="payAmt" type="number" min="1" class="fc" required></div>
+    <div class="fg"><label>Your IGN</label><input id="payIGN" class="fc" required maxlength="40"></div>
+    <button class="btn" type="submit">Submit Payment</button>
+  </form>
+  <hr style="margin:20px 0;border-color:var(--line)">
+  <form onsubmit="submitWithdrawal(event)">
+    <div class="fg"><label>e-Sewa ID (withdraw)</label><input id="wId" class="fc" required maxlength="40"></div>
+    <div class="fg"><label>Coins (minimum 50)</label><input id="wAmt" type="number" min="50" class="fc" required></div>
+    <button class="btn" type="submit">Request Withdrawal</button>
+  </form></div></div>
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxuQwPiu4mvhq9eMBouXMEAGsT7URBtu-9G81MdFFQ1ZgJ050hb-XCfzMOP9zoLtJ0/exec";
+const CLIENT_ID = "199209878392-1saa86hi59blkatcgrpn9dra3s0jgucr.apps.googleusercontent.com";
+
+// ⚠️ Yahi fee/max Code.gs ke MATCHES se match hona chahiye (asli fee server hi lagata hai)
+const MATCHES = [
+  {id:'f-solo', name:'Solo Warriors (Full Map)', fee:25, max:48, mode:'Solo', type:'MAP', badge:'SOLO', color:'#ff4a5a'},
+  {id:'f-duo', name:'Duo Assault (Full Map)', fee:50, max:24, mode:'Duo', type:'MAP', badge:'DUO', color:'#e67e22'},
+  {id:'f-squad', name:'Squad Clan Wars (Full Map)', fee:100, max:12, mode:'Squad', type:'MAP', badge:'SQUAD', color:'#9b59b6'},
+  {id:'c-alpha', name:'CS Squad Alpha', fee:80, max:12, mode:'Squad', type:'CS', badge:'SQUAD', color:'#9b59b6', time:'07:00 PM'},
+  {id:'c-omega', name:'CS Squad Omega', fee:150, max:12, mode:'Squad', type:'CS', badge:'SQUAD', color:'#9b59b6', time:'09:30 PM'}
+];
+const MSG = {ROOM_FULL:'Room full ho gaya', LOW_BALANCE:'Coins kam hain', ALREADY_JOINED:'Aap pehle se join ho', BANNED:'Account banned hai',
+  AUTH_ERROR:'Login expire ho gaya, dobara sign in karo', INVALID:'Galat data', DUPLICATE_UTR:'Ye Reference ID pehle use ho chuka',
+  MIN_LIMIT_ERROR:'Minimum 50 coins', INSUFFICIENT_BALANCE:'Balance kam hai', ERROR:'Server error'};
+const $ = id => document.getElementById(id);
+let token = sessionStorage.getItem('tok') || '', userName = sessionStorage.getItem('nm') || '', cur = null;
+
+async function api(action, data = {}) {
+  const r = await fetch(WEB_APP_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, token, ...data})});
+  const j = await r.json();
+  if (j.status === 'AUTH_ERROR') { logout('Login expire ho gaya, dobara sign in karo'); }
+  return j;
+}
+
+function loginWithGoogle() {
+  if (!window.google) return alert('Google script load nahi hui. Page refresh karo.');
+  google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: 'openid email profile',
+    callback: async r => {
+      if (!r.access_token) return alert('Login cancel/fail ho gaya');
+      token = r.access_token;
+      try {
+        const p = await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer ' + token}})).json();
+        userName = p.name || '';
+      } catch (e) {}
+      sessionStorage.setItem('tok', token); sessionStorage.setItem('nm', userName);
+      enter();
+    }
+  }).requestAccessToken();
+}
+
+async function enter() {
+  let d;
+  try { d = await api('checkPlayer', {name: userName}); }
+  catch (e) { return alert('Server se connect nahi ho paya: ' + e); }
+  if (d.status === 'Banned') { $('banScreen').style.display = 'flex'; return; }
+  if (d.status !== 'Active') return;
+  $('loginBox').style.display = 'none';
+  $('main').style.display = 'block';
+  $('logoutBtn').style.display = 'block';
+  $('coins').innerText = d.coins;
+  loadSlots();
+}
+
+function logout(msg) {
+  sessionStorage.clear(); token = '';
+  $('main').style.display = 'none'; $('logoutBtn').style.display = 'none'; $('loginBox').style.display = 'block';
+  closeModals();
+  if (typeof msg === 'string') alert(msg);
+}
+
+const PRIZE={'f-solo':800,'f-duo':800,'f-squad':800,'c-alpha':600,'c-omega':1200}; // prize pool apne hisaab se badlo (sirf display)
+function renderCards() {
+  MATCHES.forEach(m => {
+    $(m.type === 'CS' ? 'gridCS' : 'gridMap').insertAdjacentHTML('beforeend',
+      `<div class="card"><div class="ct"><span class="tag" style="background:${m.color}">${m.badge}</span><span>${m.time ? 'Starts ' + m.time : 'Full Map'}</span></div>
+      <h3>${m.name}</h3>
+      <div class="stats"><div><small>ENTRY</small><b>${m.fee}</b></div><div><small>PRIZE POOL</small><b class="gold">${PRIZE[m.id]}</b></div><div><small>SLOTS</small><b><span id="slot-${m.id}">0</span>/${m.max}</b></div></div>
+      <div class="bar"><div class="fill" id="bar-${m.id}"></div></div>
+      <button class="btn" id="btn-${m.id}" onclick="openMatch('${m.id}')">Join Match</button></div>`);
+  });
+}
+
+async function loadSlots() {
+  try {
+    const counts = await (await fetch(WEB_APP_URL + '?action=getSlots')).json();
+    MATCHES.forEach(m => {
+      const n = counts[m.name] || 0;
+      $('slot-' + m.id).innerText = n;
+      $('bar-' + m.id).style.width = Math.min(100, n / m.max * 100) + '%';
+      const b = $('btn-' + m.id);
+      b.disabled = n >= m.max; b.innerText = n >= m.max ? 'ROOM FULL' : 'Join Match';
+    });
+  } catch (e) { console.error('Slots load error', e); }
+}
+
+function openMatch(id) {
+  cur = MATCHES.find(m => m.id === id);
+  $('mTitle').innerText = cur.name + ' — ' + cur.fee + ' Coins';
+  $('teamBox').style.display = cur.mode === 'Solo' ? 'none' : 'block';
+  $('matchModal').style.display = 'flex';
+}
+function openWallet() { if (!token) return alert('Pehle sign in karo'); $('walletModal').style.display = 'flex'; }
+function closeModals() { $('matchModal').style.display = 'none'; $('walletModal').style.display = 'none'; }
+
+async function guarded(btn, fn) {
+  btn.disabled = true;
+  try { await fn(); } catch (e) { alert('Error: ' + e); }
+  btn.disabled = false;
+}
+
+function confirmEntry(e) {
+  e.preventDefault();
+  guarded($('joinBtn'), async () => {
+    const d = await api('joinMatch', {matchName: cur.name, uid: $('pUID').value.trim(), ign: $('pIGN').value.trim(),
+      teamDetails: cur.mode === 'Solo' ? 'None (Solo)' : ($('pTeam').value.trim() || 'None')});
+    if (d.status === 'SUCCESS') { alert('🎉 Registration Complete!'); $('coins').innerText = d.newBalance; closeModals(); loadSlots(); }
+    else alert('❌ ' + (MSG[d.status] || d.status) + (d.msg ? ': ' + d.msg : ''));
+  });
+}
+
+function submitPayment(e) {
+  e.preventDefault();
+  guarded(e.submitter, async () => {
+    const d = await api('submitPayment', {utr: $('payUTR').value.trim(), amount: $('payAmt').value, ign: $('payIGN').value.trim()});
+    alert(d.status === 'SUCCESS' ? '✅ Submit ho gaya. Admin approve karega to coins milenge.' : '❌ ' + (MSG[d.status] || d.status));
+    if (d.status === 'SUCCESS') e.target.reset();
+  });
+}
+
+function submitWithdrawal(e) {
+  e.preventDefault();
+  guarded(e.submitter, async () => {
+    const d = await api('submitWithdrawal', {esewaId: $('wId').value.trim(), amount: $('wAmt').value});
+    if (d.status === 'SUCCESS') { alert('✅ Withdrawal request bhej di'); $('coins').innerText = d.newBalance; e.target.reset(); }
+    else alert('❌ ' + (MSG[d.status] || d.status));
+  });
+}
+
+renderCards();
+if (token) enter();
+</script>
+</body>
+</html>

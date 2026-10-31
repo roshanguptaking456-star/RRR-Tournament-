@@ -50,6 +50,26 @@ body.in .out-only{display:none}body.in .in-only{display:flex}
 .n{padding:10px 0;border-bottom:1px solid var(--line)}.n.new{background:#fff7ed}.n p{font-size:14px;color:#374151}.n small{color:var(--mut)}
 .ban{display:none;position:fixed;inset:0;background:#000;z-index:999;color:#ff4d5e;justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px;gap:10px}
 footer{text-align:center;font-size:12px;color:var(--mut);padding:10px 5% 30px}footer a{color:var(--o)}
+
+/* ---- Dark + gold theme ---- */
+:root{--o:#ffb400;--ink:#fff;--mut:#9aa6bd;--bg:#0a0e17;--line:#222c42}
+body{background:#0a0e17;color:#c5c6c7}
+header{background:rgba(10,14,23,.92);backdrop-filter:blur(10px);border-bottom:1px solid #222c42}
+.brand,h1,h2,h3,.stitle{color:#fff}
+nav a{color:#9aa6bd}nav a:hover,.back,footer a{color:#ffb400}
+.btn-o{background:linear-gradient(90deg,#ffb400,#ff8a00);color:#111}.btn-o:disabled{background:#2a3350;color:#7b86a3}
+.btn-g{background:#1c2438;color:#fff;border:1px solid #222c42}
+.coin{background:#1c2438;border:1px solid #ffb400;color:#ffb400}
+.note{background:linear-gradient(90deg,#ffb400,#ff8a00);color:#111}
+.hero{background:radial-gradient(circle at 85% 0,#3a2a05 0,#131a29 55%,#0a0e17 100%);border:1px solid #222c42}
+.mode{background:linear-gradient(120deg,#131a29,#1f2833)!important;border:1px solid #222c42;border-left:5px solid #ffb400}
+.mode:hover{border-color:#ffb400}.mode p{color:#ffb400}
+.mc,.box,.modal-c{background:#131a29;border-color:#222c42}.mc:hover{border-color:#ffb400}
+.stats{background:#0e1422}.stats small{color:#9aa6bd}.stats b{color:#fff}.or{color:#ffb400}
+.bar{background:#0e1422}.bar div{background:linear-gradient(90deg,#ffb400,#ff3d4f)}
+.row2{border-color:#222c42}
+.fc{background:#0a0e17;border-color:#222c42;color:#fff}.fg label,.x{color:#fff}
+.n{border-color:#222c42}.n.new{background:#1c2438}.n p{color:#c5c6c7}
 </style></head>
 <body>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
@@ -69,7 +89,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:10px 5% 30px}fo
   <div class="hero">
     <div><h2>HOW TO JOIN<br>A TOURNAMENT?</h2>
       <ol><li>Sign in with Google</li><li>Add coins from your Wallet</li><li>Choose a mode and join a match</li><li>Play, win and collect rewards</li></ol></div>
-    <svg viewBox="0 0 200 220" width="170" style="flex:none"><path d="M100 10l80 28v62c0 55-35 90-80 108-45-18-80-53-80-108V38z" fill="#ffb400"/><path d="M100 30l62 22v50c0 43-27 72-62 87-35-15-62-44-62-87V52z" fill="#1f0a38"/><path d="M62 78l19 26 19-38 19 38 19-26-6 46H68z" fill="#ffb400"/><text x="100" y="158" text-anchor="middle" font-family="Oswald,Arial" font-weight="700" font-size="40" fill="#ff6a00">RRR</text></svg>
+    <svg viewBox="0 0 200 220" width="170" style="flex:none"><path d="M100 10l80 28v62c0 55-35 90-80 108-45-18-80-53-80-108V38z" fill="#ffb400"/><path d="M100 30l62 22v50c0 43-27 72-62 87-35-15-62-44-62-87V52z" fill="#0e1422"/><path d="M62 78l19 26 19-38 19 38 19-26-6 46H68z" fill="#ffb400"/><text x="100" y="158" text-anchor="middle" font-family="Oswald,Arial" font-weight="700" font-size="40" fill="#ffb400">RRR</text></svg>
   </div>
   <h2 class="stitle">Free Fire Matches</h2>
   <div class="modes" id="modes"></div>
@@ -131,8 +151,8 @@ const MSG = {ROOM_FULL:'This room is full', LOW_BALANCE:'Not enough coins', ALRE
   AUTH_ERROR:'Your session expired. Please sign in again', INVALID:'Invalid data', DUPLICATE_UTR:'This Reference ID was already used',
   MIN_LIMIT_ERROR:'Minimum withdrawal is 50 coins', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates'};
 const MODES = {
-  Solo:{t:'Solo', s:'Full Map', c:['#ff6a00','#ff3d4f'], n:1}, Duo:{t:'Duo', s:'Full Map', c:['#7c3aed','#2563eb'], n:2},
-  Squad:{t:'Squad', s:'Full Map', c:['#059669','#0ea5e9'], n:4}, CS:{t:'Clash Squad', s:'2 teams per room', c:['#111827','#dc2626'], n:0}};
+  Solo:{t:'Solo', s:'Full Map', c:['#ff3d4f','#ff3d4f'], n:1}, Duo:{t:'Duo', s:'Full Map', c:['#e67e22','#e67e22'], n:2},
+  Squad:{t:'Squad', s:'Full Map', c:['#9b59b6','#9b59b6'], n:4}, CS:{t:'Clash Squad', s:'2 teams per room', c:['#dc2626','#dc2626'], n:0}};
 let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '';
 let token = sessionStorage.getItem('tok') || '', userName = sessionStorage.getItem('nm') || '';
 const key = m => m.type === 'CS' ? 'CS' : m.mode;
@@ -175,10 +195,10 @@ function logout(msg) {
 
 function thumb(n) {
   let s = '<svg viewBox="0 0 200 120" width="190" height="115" style="flex:none">';
-  if (!n) s += '<circle cx="100" cy="60" r="40" fill="none" stroke="#fff" stroke-width="6"/><circle cx="100" cy="60" r="8" fill="#fff"/><path d="M100 6v32M100 82v32M46 60h32M122 60h32" stroke="#fff" stroke-width="6" stroke-linecap="round"/>';
+  if (!n) s += '<circle cx="100" cy="60" r="40" fill="none" stroke="#ffb400" stroke-width="6"/><circle cx="100" cy="60" r="8" fill="#ffb400"/><path d="M100 6v32M100 82v32M46 60h32M122 60h32" stroke="#ffb400" stroke-width="6" stroke-linecap="round"/>';
   else for (let i = 0; i < n; i++) {
     const x = n === 1 ? 100 : 200 / (n + 1) * (i + 1), r = n > 2 ? 15 : 20, w = n > 2 ? 22 : 30, h = n > 2 ? 26 : 34;
-    s += `<circle cx="${x}" cy="48" r="${r}" fill="#fff"/><path d="M${x - w} 108a${w} ${h} 0 0 1 ${w * 2} 0z" fill="#fff" opacity=".85"/>`;
+    s += `<circle cx="${x}" cy="48" r="${r}" fill="#ffb400"/><path d="M${x - w} 108a${w} ${h} 0 0 1 ${w * 2} 0z" fill="#ffb400" opacity=".85"/>`;
   }
   return s + '</svg>';
 }

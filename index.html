@@ -114,7 +114,9 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 
 <section class="view" id="vWinners">
   <button class="back" onclick="show('vHome')">← Back</button>
-  <h2 class="stitle">Winners</h2><div id="winBox"></div>
+  <h2 class="stitle">Winners</h2>
+  <div class="seg"><button id="wtSolo" class="on" onclick="setWin('Solo')">Solo</button><button id="wtDuo" onclick="setWin('Duo')">Duo</button><button id="wtSquad" onclick="setWin('Squad')">Squad</button></div>
+  <div id="winBox"></div>
 </section>
 
 <section class="view" id="vAccount">
@@ -294,14 +296,22 @@ function submitWithdrawal(e) {
   });
 }
 
+let WIN = [], wMode = 'Solo';
 async function loadWinners() {
   show('vWinners'); $('winBox').innerHTML = '<p class="empty">Loading...</p>';
-  try {
-    const w = await (await fetch(WEB_APP_URL + '?action=getWinners')).json(), g = {};
-    w.forEach(x => (g[x.match] = g[x.match] || []).push(x));
-    $('winBox').innerHTML = Object.keys(g).length ? Object.keys(g).map(k => `<div class="card"><h3>${esc(k)}</h3>${g[k].map(x =>
-      `<div class="row2"><span>#${x.pos} &nbsp;<b style="color:#fff">${esc(x.ign)}</b> <small>(UID ${esc(x.uid)})</small></span><b class="or">${x.reward} Coins</b></div>`).join('')}</div>`).join('') : '<p class="empty">No winners published yet.</p>';
-  } catch (e) { $('winBox').innerHTML = '<p class="empty">Could not load winners.</p>'; }
+  try { WIN = await (await fetch(WEB_APP_URL + '?action=getWinners')).json(); renderWinners(); }
+  catch (e) { $('winBox').innerHTML = '<p class="empty">Could not load winners.</p>'; }
+}
+function setWin(m) { wMode = m; ['Solo', 'Duo', 'Squad'].forEach(k => $('wt' + k).classList.toggle('on', k === m)); renderWinners(); }
+function renderWinners() {
+  const g = {};
+  WIN.filter(x => x.mode === wMode).forEach(x => (g[x.match + '|' + x.day] = g[x.match + '|' + x.day] || []).push(x));
+  const keys = Object.keys(g).slice(0, 15);
+  $('winBox').innerHTML = keys.length ? keys.map(k => {
+    const [m, day] = k.split('|'), when = new Date(day).toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+    return `<div class="card"><h3>${esc(m)} <small style="color:var(--mut);font-size:13px">• ${when}</small></h3>${g[k].map(x =>
+      `<div class="row2"><span>#${x.pos} &nbsp;<b style="color:#fff">${esc(x.ign)}</b>${wMode === 'Solo' ? '' : ' <small>(team leader)</small>'} <small>(UID ${esc(x.uid)})</small></span><b class="or">${x.reward} Coins</b></div>`).join('')}</div>`;
+  }).join('') : `<p class="empty">No ${wMode} winners published yet.</p>`;
 }
 
 async function loadNotifs() {

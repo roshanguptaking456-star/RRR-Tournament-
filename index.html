@@ -1,135 +1,130 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0e17">
 <title>RRR Tournament</title>
 <link rel="icon" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root{--o:#ff6a00;--ink:#111827;--mut:#6b7280;--bg:#f6f7fb;--line:#e5e7eb}
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-h1,h2,h3{font-family:'Oswald',sans-serif}
-body{background:var(--bg);color:var(--ink)}
-header{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);padding:10px 5%;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:8px;font-family:'Oswald';font-weight:700;font-size:20px;cursor:pointer}.brand img{height:44px}
-nav{display:flex;gap:22px}nav a{color:var(--mut);font-weight:600;cursor:pointer}nav a:hover{color:var(--o)}
-.acts{display:flex;align-items:center;gap:10px}
-.btn-o,.btn-g{border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:14px}
-.btn-o{background:var(--o);color:#fff}.btn-g{background:#eef0f4;color:var(--ink)}.btn-o:disabled{background:#cbd0d8;cursor:not-allowed}
-.w100{width:100%;margin-top:12px}
-.out-only{display:flex;gap:10px}.in-only{display:none;align-items:center;gap:12px}
-body.in .out-only{display:none}body.in .in-only{display:flex}
-.coin{background:#fff3e8;color:var(--o);padding:8px 14px;border-radius:20px;font-weight:700}
-.bell{position:relative;cursor:pointer;font-size:20px}.bell b{position:absolute;top:-6px;right:-8px;background:#e11d48;color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;display:none}
-.wrap{max-width:1100px;margin:0 auto;padding:0 5% 30px}
+:root{--g:#ffb400;--bg:#0a0e17;--card:#131a29;--line:#222c42;--mut:#9aa6bd}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,h4{font-family:'Oswald',sans-serif;color:#fff}
+body{background:#05080f;color:#c5c6c7}
+.app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg);padding:0 16px 96px}
+.out-only{display:revert}.in-only{display:none}body.in .out-only{display:none}body.in .in-only{display:revert}
+.top{display:flex;align-items:center;gap:12px;padding:16px 0}
+.appico{width:52px;height:52px;border-radius:14px;flex:none}
+.ttl{flex:1}.ttl h1{font-size:24px;line-height:1.1}.ttl p{font-size:13px;color:var(--mut)}
+.bellbtn{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;cursor:pointer}
+.bellbtn b{position:absolute;top:-4px;right:-4px;background:#e11d48;color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;display:none}
+.pcnote{background:#2a1218;border:1px solid #e11d48;color:#ffb4bd;text-align:center;font-weight:700;padding:10px;border-radius:12px;margin-bottom:14px;font-size:14px}
 .view{display:none}.view.on{display:block}
-.note{background:var(--o);color:#fff;border-radius:12px;padding:14px 18px;margin:18px 0;display:flex;justify-content:space-between;gap:10px}.note span{cursor:pointer;font-weight:700}
-.hero{border-radius:20px;background:linear-gradient(120deg,#1f0a38,#6d28d9 55%,#ff6a00);color:#fff;padding:36px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden}
-.hero h2{font-size:clamp(28px,5vw,46px);line-height:1.1}.hero ol{margin:14px 0 0 18px;line-height:1.9}
-.stitle{text-align:center;font-family:'Oswald';font-size:32px;margin:34px 0 18px}
-.modes,.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
-.mode{border-radius:16px;color:#fff;padding:22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:150px;transition:.2s;overflow:hidden}.mode:hover{transform:translateY(-3px)}
-.mode h3{font-size:26px}.mode p{margin-top:8px;font-weight:600}.mode small{opacity:.85}
-.mc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px}
-.ct{display:flex;justify-content:space-between;font-size:12px;color:var(--mut)}.tag{color:#fff;font-weight:700;padding:3px 10px;border-radius:20px}
-.mc h3{font-size:22px;margin:12px 0}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#f6f7fb;border-radius:10px;padding:12px;text-align:center}
-.stats small{display:block;font-size:10px;letter-spacing:1px;color:var(--mut)}.stats b{font-size:16px}.or{color:var(--o)}
-.bar{background:#eceff4;height:6px;border-radius:3px;margin:14px 0 0;overflow:hidden}.bar div{background:var(--o);height:100%}
-.mc .btn-o{width:100%;margin-top:14px}
-.back{background:none;border:0;color:var(--o);font-weight:700;cursor:pointer;margin:18px 0;font-size:15px}
-.box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px}.box h3{font-size:22px;margin-bottom:10px}
-.row2{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}.row2 b.or{white-space:nowrap}
-.narrow{max-width:560px;margin:0 auto}
-.fg{margin-bottom:12px}.fg label{display:block;margin-bottom:4px;font-size:13px;font-weight:600}
-.fc{width:100%;border:1px solid #d1d5db;padding:11px;border-radius:8px;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;justify-content:center;align-items:center;overflow:auto}
-.modal-c{background:#fff;width:94%;max-width:480px;border-radius:16px;padding:24px;position:relative;margin:20px 0}
-.x{position:absolute;top:10px;right:16px;font-size:28px;cursor:pointer}
-.n{padding:10px 0;border-bottom:1px solid var(--line)}.n.new{background:#fff7ed}.n p{font-size:14px;color:#374151}.n small{color:var(--mut)}
+.auth{border-radius:20px;padding:20px;margin-bottom:14px;background:linear-gradient(135deg,#1f2833,#131a29 55%,#3a2a05);border:1px solid #3a3320}
+.auth h2{font-size:22px}.auth p,.auth small{color:var(--mut);font-size:14px}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;background:linear-gradient(90deg,#ffb400,#ff8a00);color:#111}
+.gbtn:disabled{background:#2a3350;color:#7b86a3;cursor:not-allowed}
+.bal h2{font-size:34px;color:var(--g);margin:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.card h3{font-size:20px}.card>p{font-size:13px;color:var(--mut);margin-top:2px}
+.conn{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:12px}
+.conn button{background:#0e1422;border:1px solid var(--line);color:#fff;border-radius:12px;padding:12px 6px;font-weight:600;font-size:13px;cursor:pointer}.conn span{display:block;font-size:20px}
+.seg{display:flex;background:#0e1422;border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:14px}
+.seg button{flex:1;border:0;background:none;color:var(--mut);font-weight:700;padding:11px;border-radius:10px;cursor:pointer;font-size:14px}
+.seg button.on{background:var(--g);color:#111}
+.mcard{display:flex;align-items:flex-end;justify-content:space-between;height:140px;border-radius:18px;padding:16px;margin-bottom:12px;background-size:cover;border:1px solid var(--line);cursor:pointer;overflow:hidden}
+.mcard h3{font-size:26px;text-shadow:0 2px 8px #000}.mcard small{color:#ddd}.mcard p{color:var(--g);font-weight:700;font-size:13px;margin-top:2px}
+.mcard .go{font-size:34px;color:var(--g);line-height:1}
+.rc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;cursor:pointer}
+.rc:hover{border-color:var(--g)}.rc.full{opacity:.6;cursor:not-allowed}
+.rt{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+.chip{background:#1c2438;color:var(--g);padding:3px 10px;border-radius:20px}.st.o{color:#4ade80}.st.f{color:#f87171}
+.rm{display:flex;justify-content:space-between;gap:10px;margin:10px 0}.rm h4{font-size:19px}.rm small{color:var(--mut);font-size:12px}
+.pz{text-align:right;flex:none}.pz b{color:var(--g);font-size:16px;display:block}
+.rb{display:flex;align-items:center;gap:10px}.rb span{color:var(--g);font-size:22px}
+.pbar{flex:1;height:6px;background:#0e1422;border-radius:3px;overflow:hidden}.pbar i{display:block;height:100%;background:linear-gradient(90deg,#ffb400,#ff3d4f)}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+.back{background:none;border:0;color:var(--g);font-weight:700;cursor:pointer;margin:0 0 12px;font-size:15px}
+.stitle{font-size:26px;margin-bottom:14px}
+.row2{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}.or{color:var(--g)}
+.fg{margin-bottom:12px}.fg label{display:block;margin-bottom:4px;font-size:13px;font-weight:600;color:#fff}
+.fc{width:100%;background:var(--bg);border:1px solid var(--line);color:#fff;padding:12px;border-radius:10px;font-size:14px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;justify-content:center;align-items:center;overflow:auto}
+.modal-c{background:var(--card);border:1px solid var(--line);width:94%;max-width:480px;border-radius:18px;padding:22px;position:relative;margin:20px 0}
+.x{position:absolute;top:8px;right:16px;font-size:28px;cursor:pointer;color:#fff}
+.n{padding:10px 0;border-bottom:1px solid var(--line)}.n.new{background:#1c2438}.n p{font-size:14px}.n small{color:var(--mut)}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:560px;background:#0e1422;border-top:1px solid var(--line);display:flex;padding:8px 8px 10px;z-index:60}
+.tabbar a{flex:1;text-align:center;color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;padding:6px 0;border-radius:14px}.tabbar a span{display:block;font-size:20px}
+.tabbar a.on{color:var(--g);background:#1c2438}
 .ban{display:none;position:fixed;inset:0;background:#000;z-index:999;color:#ff4d5e;justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px;gap:10px}
-footer{text-align:center;font-size:12px;color:var(--mut);padding:10px 5% 30px}footer a{color:var(--o)}
-
-/* ---- Dark + gold theme ---- */
-:root{--o:#ffb400;--ink:#fff;--mut:#9aa6bd;--bg:#0a0e17;--line:#222c42}
-body{background:#0a0e17;color:#c5c6c7}
-header{background:rgba(10,14,23,.92);backdrop-filter:blur(10px);border-bottom:1px solid #222c42}
-.brand,h1,h2,h3,.stitle{color:#fff}
-nav a{color:#9aa6bd}nav a:hover,.back,footer a{color:#ffb400}
-.btn-o{background:linear-gradient(90deg,#ffb400,#ff8a00);color:#111}.btn-o:disabled{background:#2a3350;color:#7b86a3}
-.btn-g{background:#1c2438;color:#fff;border:1px solid #222c42}
-.coin{background:#1c2438;border:1px solid #ffb400;color:#ffb400}
-.note{background:linear-gradient(90deg,#ffb400,#ff8a00);color:#111}
-.hero{background:radial-gradient(circle at 85% 0,#3a2a05 0,#131a29 55%,#0a0e17 100%);border:1px solid #222c42}
-.mode{background:linear-gradient(120deg,#131a29,#1f2833)!important;border:1px solid #222c42;border-left:5px solid #ffb400}
-.mode:hover{border-color:#ffb400}.mode p{color:#ffb400}
-.mc,.box,.modal-c{background:#131a29;border-color:#222c42}.mc:hover{border-color:#ffb400}
-.stats{background:#0e1422}.stats small{color:#9aa6bd}.stats b{color:#fff}.or{color:#ffb400}
-.bar{background:#0e1422}.bar div{background:linear-gradient(90deg,#ffb400,#ff3d4f)}
-.row2{border-color:#222c42}
-.fc{background:#0a0e17;border-color:#222c42;color:#fff}.fg label,.x{color:#fff}
-.n{border-color:#222c42}.n.new{background:#1c2438}.n p{color:#c5c6c7}
+footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a{color:var(--g)}
 </style></head>
 <body>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
+<div class="app">
+<div class="top">
+  <img class="appico" src="logo.png" alt="" onerror="this.style.visibility='hidden'">
+  <div class="ttl"><h1>Free Fire Matches</h1><p>Join tournaments and win coin rewards</p></div>
+  <span class="in-only"><button class="bellbtn" onclick="openNotifs()">🔔<b id="badge">0</b></button></span>
+</div>
 
-<header>
-  <div class="brand" onclick="show('vHome')"><img src="logo.png" alt="" onerror="this.remove()">RRR Tournament</div>
-  <nav><a onclick="show('vHome')">Matches</a><a onclick="loadWinners()">Winners</a><a onclick="openWallet()">Wallet</a></nav>
-  <div class="acts">
-    <div class="out-only"><button class="btn-g" onclick="loginWithGoogle()">Register</button><button class="btn-o" onclick="loginWithGoogle()">Login</button></div>
-    <div class="in-only"><span class="coin">Coins: <span id="coins">0</span></span><span class="bell" onclick="openNotifs()">🔔<b id="badge">0</b></span><button class="btn-g" onclick="logout()">Logout</button></div>
-  </div>
-</header>
+<div class="pcnote">🚫 PC players are not allowed</div>
 
-<div class="wrap">
 <section class="view on" id="vHome">
-  <div class="note" id="note"><div>Are you an esports player? Join daily Free Fire matches and win coin rewards. Sign in with Google and get 25 free coins!</div><span onclick="$('note').remove()">✕</span></div>
-  <div class="hero">
-    <div><h2>HOW TO JOIN<br>A TOURNAMENT?</h2>
-      <ol><li>Sign in with Google</li><li>Add coins from your Wallet</li><li>Choose a mode and join a match</li><li>Play, win and collect rewards</li></ol></div>
-    <svg viewBox="0 0 200 220" width="170" style="flex:none"><path d="M100 10l80 28v62c0 55-35 90-80 108-45-18-80-53-80-108V38z" fill="#ffb400"/><path d="M100 30l62 22v50c0 43-27 72-62 87-35-15-62-44-62-87V52z" fill="#0e1422"/><path d="M62 78l19 26 19-38 19 38 19-26-6 46H68z" fill="#ffb400"/><text x="100" y="158" text-anchor="middle" font-family="Oswald,Arial" font-weight="700" font-size="40" fill="#ffb400">RRR</text></svg>
-  </div>
-  <h2 class="stitle">Free Fire Matches</h2>
-  <div class="modes" id="modes"></div>
+  <div class="auth out-only"><h2>Browse matches, sign in to play</h2><p>Sign in to join matches and use your wallet. New players get 25 free coins.</p>
+    <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button></div>
+  <div class="auth in-only"><div class="bal"><small>Wallet balance</small><h2><span id="coins">0</span> Coins</h2></div></div>
+  <div class="card"><h3>Connect with RRR Tournament</h3><p>Share the site, message us or follow us.</p><div class="conn" id="conn"></div></div>
+  <div class="seg"><button id="tabMap" class="on" onclick="setTab('map')">Full Map Rooms</button><button id="tabCS" onclick="setTab('cs')">CS Rooms</button></div>
+  <div id="homeList"></div>
 </section>
 
 <section class="view" id="vMatches">
   <button class="back" onclick="show('vHome')">← Back</button>
-  <h2 class="stitle" style="margin-top:0" id="mTitleH"></h2>
-  <div class="mgrid" id="mgrid"></div>
-  <div class="box" id="rewardWrap" style="margin-top:18px"><h3>Full Map Rewards (Top 15)</h3><div id="rewardBox"></div></div>
+  <h2 class="stitle" id="mTitleH"></h2>
+  <div id="mRows"></div>
+  <div class="card" id="rewardWrap"><h3>Full Map Rewards (Top 15)</h3><div id="rewardBox"></div></div>
 </section>
 
 <section class="view" id="vWallet">
   <button class="back" onclick="show('vHome')">← Back</button>
-  <div class="narrow">
-    <div class="box"><h3>Add Coins</h3>
-      <p style="font-size:14px;margin-bottom:10px">Scan the QR with e-Sewa and send the amount, then enter the Reference ID below. Coins are added after the admin approves your payment.</p>
-      <img src="qr.jpeg" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:200px;margin:0 auto 14px;border-radius:10px">
-      <form onsubmit="submitPayment(event)">
-        <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
-        <div class="fg"><label>Amount Paid (NPR)</label><input id="payAmt" type="number" min="1" class="fc" required></div>
-        <div class="fg"><label>Your IGN</label><input id="payIGN" class="fc" required maxlength="40"></div>
-        <button class="btn-o w100" type="submit">Submit Payment</button>
-      </form></div>
-    <div class="box"><h3>Withdraw</h3>
-      <form onsubmit="submitWithdrawal(event)">
-        <div class="fg"><label>e-Sewa ID (for withdrawal)</label><input id="wId" class="fc" required maxlength="40"></div>
-        <div class="fg"><label>Coins (minimum 50)</label><input id="wAmt" type="number" min="50" class="fc" required></div>
-        <button class="btn-o w100" type="submit">Request Withdrawal</button>
-      </form></div>
-  </div>
+  <div class="auth"><div class="bal"><small>Wallet balance</small><h2><span id="coins2">0</span> Coins</h2><small>Minimum withdrawal: 100 coins.</small></div></div>
+  <div class="card"><h3>Add Coins</h3>
+    <p style="margin-bottom:10px">Scan the QR with e-Sewa and send the amount (minimum 25 NPR), then enter the Reference ID below. Coins are added to your wallet within 6-8 hours.</p>
+    <img src="qr.jpeg" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:200px;margin:0 auto 14px;border-radius:10px">
+    <form onsubmit="submitPayment(event)">
+      <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
+      <div class="fg"><label>Amount Paid (NPR, minimum 25)</label><input id="payAmt" type="number" min="25" class="fc" required></div>
+      <div class="fg"><label>Your IGN</label><input id="payIGN" class="fc" required maxlength="40"></div>
+      <button class="gbtn" type="submit">Submit Payment</button></form></div>
+  <div class="card"><h3>Withdraw</h3><p>Withdrawals are sent to your e-Sewa within 6-8 hours.</p>
+    <form onsubmit="submitWithdrawal(event)">
+      <div class="fg"><label>e-Sewa ID (for withdrawal)</label><input id="wId" class="fc" required maxlength="40"></div>
+      <div class="fg"><label>Coins (minimum 100)</label><input id="wAmt" type="number" min="100" class="fc" required></div>
+      <button class="gbtn" type="submit">Submit Withdrawal Request</button></form></div>
 </section>
 
 <section class="view" id="vWinners">
   <button class="back" onclick="show('vHome')">← Back</button>
-  <h2 class="stitle" style="margin-top:0">Winners</h2>
-  <div id="winBox"></div>
+  <h2 class="stitle">Winners</h2><div id="winBox"></div>
 </section>
+
+<section class="view" id="vAccount">
+  <button class="back" onclick="show('vHome')">← Back</button>
+  <div class="card"><h3 id="accName">Player</h3><p>Signed in with Google</p>
+    <button class="gbtn" onclick="logout()">Logout</button></div>
+  <div class="card"><p><a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p></div>
+</section>
+<footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
 </div>
-<footer>RRR Tournament is not affiliated with Garena or Free Fire. · <a href="privacy.html">Privacy Policy</a></footer>
+
+<div class="tabbar">
+  <a id="nHome" class="on" onclick="show('vHome')"><span>🎮</span>Matches</a>
+  <a id="nWin" onclick="loadWinners()"><span>🏆</span>Winners</a>
+  <a id="nWal" onclick="openWallet()"><span>💳</span>Wallet</a>
+  <a id="nAcc" onclick="openAccount()"><span>👤</span>Account</a>
+</div>
 
 <div class="modal" id="matchModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
   <h2 id="mTitle" style="margin-bottom:12px">Join Match</h2>
@@ -137,7 +132,7 @@ nav a{color:#9aa6bd}nav a:hover,.back,footer a{color:#ffb400}
     <div class="fg"><label>Free Fire UID</label><input id="pUID" class="fc" required pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
     <div class="fg"><label>In-Game Name (IGN)</label><input id="pIGN" class="fc" required maxlength="40"></div>
     <div class="fg" id="teamBox" style="display:none"><label>Teammates' Name + UID (Squad: 3 players)</label><textarea id="pTeam" class="fc" rows="3" placeholder="Player2 (UID: 7281), Player3 (UID: 9301)"></textarea></div>
-    <button class="btn-o w100" id="joinBtn" type="submit">Confirm Entry</button>
+    <button class="gbtn" id="joinBtn" type="submit">Confirm Entry</button>
   </form></div></div>
 <div class="modal" id="notifModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
   <h2 style="margin-bottom:10px">Notifications</h2><div id="nList"></div></div></div>
@@ -145,20 +140,25 @@ nav a{color:#9aa6bd}nav a:hover,.back,footer a{color:#ffb400}
 <script>
 const WEB_APP_URL = APP_CONFIG.webAppUrl;
 const CLIENT_ID = APP_CONFIG.clientId;
+const SOC = APP_CONFIG.social || {};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MSG = {ROOM_FULL:'This room is full', LOW_BALANCE:'Not enough coins', ALREADY_JOINED:'You have already joined this match', MATCH_BANNED:'You are not allowed to join this match',
   AUTH_ERROR:'Your session expired. Please sign in again', INVALID:'Invalid data', DUPLICATE_UTR:'This Reference ID was already used',
-  MIN_LIMIT_ERROR:'Minimum withdrawal is 50 coins', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates'};
-const MODES = {
-  Solo:{t:'Solo', s:'Full Map', c:['#ff3d4f','#ff3d4f'], n:1}, Duo:{t:'Duo', s:'Full Map', c:['#e67e22','#e67e22'], n:2},
-  Squad:{t:'Squad', s:'Full Map', c:['#9b59b6','#9b59b6'], n:4}, CS:{t:'Clash Squad', s:'2 teams per room', c:['#dc2626','#dc2626'], n:0}};
-let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '';
+  MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates'};
+const MODES = {Solo:{t:'Solo', s:'Full Map'}, Duo:{t:'Duo', s:'Full Map'}, Squad:{t:'Squad', s:'Full Map'}, CS:{t:'Clash Squad', s:'2 teams per room'}};
+const IMG = {Solo:'solo.jpg', Duo:'duo.jpg', Squad:'squad.jpg', CS:'cs.jpg'};
+let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '', tab = 'map';
 let token = sessionStorage.getItem('tok') || '', userName = sessionStorage.getItem('nm') || '';
 const key = m => m.type === 'CS' ? 'CS' : m.mode;
+const NAVOF = {vHome:'nHome', vMatches:'nHome', vWinners:'nWin', vWallet:'nWal', vAccount:'nAcc'};
 
-function show(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('on')); $(id).classList.add('on'); window.scrollTo(0, 0); }
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on')); $(id).classList.add('on');
+  document.querySelectorAll('.tabbar a').forEach(a => a.classList.remove('on')); $(NAVOF[id]).classList.add('on'); window.scrollTo(0, 0);
+}
 function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+function setCoins(c) { $('coins').innerText = c; $('coins2').innerText = c; }
 
 async function api(action, data = {}) {
   const j = await (await fetch(WEB_APP_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action, token, ...data})})).json();
@@ -185,36 +185,57 @@ async function enter() {
   let d;
   try { d = await api('checkPlayer', {name: userName}); } catch (e) { return alert('Could not connect to the server: ' + e); }
   if (d.status !== 'Active') return;
-  document.body.classList.add('in'); $('coins').innerText = d.coins; loadNotifs();
+  document.body.classList.add('in'); setCoins(d.coins);
+    loadNotifs();
 }
-
 function logout(msg) {
   sessionStorage.clear(); token = ''; document.body.classList.remove('in'); closeModals(); show('vHome');
   if (typeof msg === 'string') alert(msg);
 }
 
-function thumb(n) {
-  let s = '<svg viewBox="0 0 200 120" width="190" height="115" style="flex:none">';
-  if (!n) s += '<circle cx="100" cy="60" r="40" fill="none" stroke="#ffb400" stroke-width="6"/><circle cx="100" cy="60" r="8" fill="#ffb400"/><path d="M100 6v32M100 82v32M46 60h32M122 60h32" stroke="#ffb400" stroke-width="6" stroke-linecap="round"/>';
-  else for (let i = 0; i < n; i++) {
-    const x = n === 1 ? 100 : 200 / (n + 1) * (i + 1), r = n > 2 ? 15 : 20, w = n > 2 ? 22 : 30, h = n > 2 ? 26 : 34;
-    s += `<circle cx="${x}" cy="48" r="${r}" fill="#ffb400"/><path d="M${x - w} 108a${w} ${h} 0 0 1 ${w * 2} 0z" fill="#ffb400" opacity=".85"/>`;
-  }
-  return s + '</svg>';
+function share() {
+  const u = location.href.split('#')[0];
+  if (navigator.share) navigator.share({title:'RRR Tournament', text:'Join Free Fire matches on RRR Tournament!', url:u}).catch(() => {});
+  else navigator.clipboard.writeText(u).then(() => alert('Link copied!'));
+}
+function renderConn() {
+  const L = {messenger:['💬','Messenger'], tiktok:['🎵','TikTok'], whatsapp:['🟢','WhatsApp'], facebook:['📘','Facebook'], telegram:['✈️','Telegram']};
+  $('conn').innerHTML = '<button onclick="share()"><span>📤</span>Share</button>' + Object.keys(L).filter(k => SOC[k]).map(k =>
+    `<button onclick="window.open('${esc(SOC[k])}','_blank')"><span>${L[k][0]}</span>${L[k][1]}</button>`).join('');
 }
 
 async function loadConfig() {
   try {
     const c = await (await fetch(WEB_APP_URL + '?action=getConfig')).json();
     MATCHES = c.matches.map((m, i) => ({...m, id: 'm' + i})); REWARDS = c.rewards;
-    renderModes(); renderRewards(); loadSlots();
-  } catch (e) { $('modes').innerHTML = '<p>Could not load matches. Please refresh.</p>'; }
+    renderRewards(); renderHome(); loadSlots();
+  } catch (e) { $('homeList').innerHTML = '<p class="empty">Could not load matches. Please refresh.</p>'; }
 }
-function renderModes() {
-  $('modes').innerHTML = Object.keys(MODES).map(k => {
-    const m = MODES[k], c = MATCHES.filter(x => key(x) === k).length;
-    return `<div class="mode" style="background:linear-gradient(120deg,${m.c[0]},${m.c[1]})" onclick="openMode('${k}')"><div><h3>${m.t.toUpperCase()}</h3><small>${m.s}</small><p>${c} Matches Found</p></div>${thumb(m.n)}</div>`;
+function setTab(t) { tab = t; $('tabMap').classList.toggle('on', t === 'map'); $('tabCS').classList.toggle('on', t === 'cs'); renderHome(); }
+function modeCard(k, flat) {
+  const c = MATCHES.filter(x => key(x) === k).length;
+  return `<div class="mcard" style="background-image:linear-gradient(90deg,rgba(10,14,23,.9) 20%,rgba(10,14,23,.1)),url(${IMG[k]})" ${flat ? '' : `onclick="openMode('${k}')"`}>
+    <div><h3>${MODES[k].t.toUpperCase()}</h3><small>${MODES[k].s}</small><p>${c} Match${c === 1 ? '' : 'es'} Found</p></div>${flat ? '' : '<span class="go">›</span>'}</div>`;
+}
+function rows(list) {
+  if (!list.length) return '<p class="empty">No matches right now.</p>';
+  return list.map(m => {
+    const n = COUNTS[m.name] || 0, full = n >= m.max, md = MODES[key(m)];
+    return `<div class="rc ${full ? 'full' : ''}" ${full ? '' : `onclick="openMatch('${m.id}')"`}>
+      <div class="rt"><span class="chip">ENTRY ${m.fee} COINS</span><span class="st ${full ? 'f' : 'o'}">${full ? 'FULL' : 'OPEN'}</span></div>
+      <div class="rm"><div><h4>${esc(m.name)}</h4><small>${md.t} • ${m.time ? 'Starts ' + esc(m.time) : 'Time soon'}</small></div>
+        <div class="pz"><b>${esc(m.prize)} Coins</b><small>${n}/${m.max} ${m.type === 'CS' ? 'teams' : 'joined'}</small></div></div>
+      <div class="rb"><div class="pbar"><i style="width:${Math.min(100, n / m.max * 100)}%"></i></div><span>›</span></div></div>`;
   }).join('');
+}
+function renderHome() {
+  $('homeList').innerHTML = tab === 'map' ? ['Solo', 'Duo', 'Squad'].map(k => modeCard(k)).join('') : modeCard('CS', true) + rows(MATCHES.filter(m => key(m) === 'CS'));
+}
+function openMode(k) { curMode = k; renderMode(); show('vMatches'); }
+function renderMode() {
+  $('mTitleH').innerText = MODES[curMode].t + ' Matches';
+  $('rewardWrap').style.display = curMode === 'CS' ? 'none' : 'block';
+  $('mRows').innerHTML = rows(MATCHES.filter(m => key(m) === curMode));
 }
 function renderRewards() {
   let h = '', i = 0;
@@ -225,21 +246,7 @@ function renderRewards() {
   $('rewardBox').innerHTML = h;
 }
 async function loadSlots() {
-  try { COUNTS = await (await fetch(WEB_APP_URL + '?action=getSlots')).json(); if ($('vMatches').classList.contains('on')) renderMatches(); } catch (e) {}
-}
-function openMode(k) { curMode = k; renderMatches(); show('vMatches'); }
-function renderMatches() {
-  const list = MATCHES.filter(m => key(m) === curMode), md = MODES[curMode];
-  $('mTitleH').innerText = md.t + ' Matches';
-  $('rewardWrap').style.display = curMode === 'CS' ? 'none' : 'block';
-  $('mgrid').innerHTML = list.length ? list.map(m => {
-    const n = COUNTS[m.name] || 0, full = n >= m.max;
-    return `<div class="mc"><div class="ct"><span class="tag" style="background:${md.c[0]}">${md.t.toUpperCase()}</span><span>${m.time ? 'Starts ' + esc(m.time) : 'Time soon'}</span></div>
-      <h3>${esc(m.name)}</h3>
-      <div class="stats"><div><small>ENTRY</small><b>${m.fee}</b></div><div><small>PRIZE POOL</small><b class="or">${esc(m.prize)}</b></div><div><small>${m.type === 'CS' ? 'TEAMS' : 'SLOTS'}</small><b>${n}/${m.max}</b></div></div>
-      <div class="bar"><div style="width:${Math.min(100, n / m.max * 100)}%"></div></div>
-      <button class="btn-o" ${full ? 'disabled' : ''} onclick="openMatch('${m.id}')">${full ? 'ROOM FULL' : 'Join Match'}</button></div>`;
-  }).join('') : '<p>No matches right now.</p>';
+  try { COUNTS = await (await fetch(WEB_APP_URL + '?action=getSlots')).json(); renderHome(); if ($('vMatches').classList.contains('on')) renderMode(); } catch (e) {}
 }
 
 function openMatch(id) {
@@ -251,23 +258,23 @@ function openMatch(id) {
   $('matchModal').style.display = 'flex';
 }
 async function guarded(btn, fn) { btn.disabled = true; try { await fn(); } catch (e) { alert('Error: ' + e); } btn.disabled = false; }
-
 function confirmEntry(e) {
   e.preventDefault();
   guarded($('joinBtn'), async () => {
     const d = await api('joinMatch', {matchName: cur.name, uid: $('pUID').value.trim(), ign: $('pIGN').value.trim(),
       teamDetails: cur.mode === 'Solo' ? 'None (Solo)' : ($('pTeam').value.trim() || 'None')});
-    if (d.status === 'SUCCESS') { alert('🎉 Registration Complete!'); $('coins').innerText = d.newBalance; closeModals(); loadSlots(); }
+    if (d.status === 'SUCCESS') { alert('🎉 Registration Complete!'); setCoins(d.newBalance); closeModals(); loadSlots(); }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status) + (d.msg ? ': ' + d.msg : ''));
   });
 }
 
 function openWallet() { if (!token) return loginWithGoogle(); show('vWallet'); }
+function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; show('vAccount'); }
 function submitPayment(e) {
   e.preventDefault();
   guarded(e.submitter, async () => {
     const d = await api('submitPayment', {utr: $('payUTR').value.trim(), amount: $('payAmt').value, ign: $('payIGN').value.trim()});
-    alert(d.status === 'SUCCESS' ? '✅ Submitted. Coins will be added after the admin approves your payment.' : '❌ ' + (MSG[d.status] || d.status));
+    alert(d.status === 'SUCCESS' ? '✅ Submitted. Your coins will be added within 6-8 hours.' : '❌ ' + (MSG[d.status] || d.status));
     if (d.status === 'SUCCESS') e.target.reset();
   });
 }
@@ -275,19 +282,19 @@ function submitWithdrawal(e) {
   e.preventDefault();
   guarded(e.submitter, async () => {
     const d = await api('submitWithdrawal', {esewaId: $('wId').value.trim(), amount: $('wAmt').value});
-    if (d.status === 'SUCCESS') { alert('✅ Withdrawal request sent'); $('coins').innerText = d.newBalance; e.target.reset(); }
+    if (d.status === 'SUCCESS') { alert('✅ Withdrawal request sent. It will be processed within 6-8 hours.'); setCoins(d.newBalance); e.target.reset(); }
     else alert('❌ ' + (MSG[d.status] || d.status));
   });
 }
 
 async function loadWinners() {
-  show('vWinners'); $('winBox').innerHTML = '<p>Loading...</p>';
+  show('vWinners'); $('winBox').innerHTML = '<p class="empty">Loading...</p>';
   try {
     const w = await (await fetch(WEB_APP_URL + '?action=getWinners')).json(), g = {};
     w.forEach(x => (g[x.match] = g[x.match] || []).push(x));
-    $('winBox').innerHTML = Object.keys(g).length ? Object.keys(g).map(k => `<div class="box"><h3>${esc(k)}</h3>${g[k].map(x =>
-      `<div class="row2"><span>#${x.pos} &nbsp;<b>${esc(x.ign)}</b> <small>(UID ${esc(x.uid)})</small></span><b class="or">${x.reward} Coins</b></div>`).join('')}</div>`).join('') : '<p>No winners published yet.</p>';
-  } catch (e) { $('winBox').innerHTML = '<p>Could not load winners.</p>'; }
+    $('winBox').innerHTML = Object.keys(g).length ? Object.keys(g).map(k => `<div class="card"><h3>${esc(k)}</h3>${g[k].map(x =>
+      `<div class="row2"><span>#${x.pos} &nbsp;<b style="color:#fff">${esc(x.ign)}</b> <small>(UID ${esc(x.uid)})</small></span><b class="or">${x.reward} Coins</b></div>`).join('')}</div>`).join('') : '<p class="empty">No winners published yet.</p>';
+  } catch (e) { $('winBox').innerHTML = '<p class="empty">Could not load winners.</p>'; }
 }
 
 async function loadNotifs() {
@@ -295,14 +302,14 @@ async function loadNotifs() {
   try { const d = await api('getNotifications'); if (d.status !== 'SUCCESS') return; NOTIFS = d.list; UNREAD = d.unread; $('badge').innerText = UNREAD; $('badge').style.display = UNREAD ? 'block' : 'none'; } catch (e) {}
 }
 function openNotifs() {
-  $('nList').innerHTML = NOTIFS.length ? NOTIFS.map(n => `<div class="n ${n.read ? '' : 'new'}"><b>${esc(n.title)}</b><p>${esc(n.msg)}</p><small>${esc(n.time)}</small></div>`).join('') : '<p>No notifications yet.</p>';
+  $('nList').innerHTML = NOTIFS.length ? NOTIFS.map(n => `<div class="n ${n.read ? '' : 'new'}"><b style="color:#fff">${esc(n.title)}</b><p>${esc(n.msg)}</p><small>${esc(n.time)}</small></div>`).join('') : '<p class="empty">No notifications yet.</p>';
   $('notifModal').style.display = 'flex';
   if (UNREAD) { api('markRead').then(() => { $('badge').style.display = 'none'; UNREAD = 0; }); }
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadNotifs(); });
 setInterval(() => { if (document.visibilityState === 'visible') loadNotifs(); }, 300000);
 
-loadConfig();
+renderConn(); loadConfig();
 if (token) enter();
 </script>
 </body></html>

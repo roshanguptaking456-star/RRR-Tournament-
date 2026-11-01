@@ -66,6 +66,10 @@ body{background:#05080f;color:#c5c6c7}
 .tabbar a.on{color:var(--g);background:#1c2438}
 .ban{display:none;position:fixed;inset:0;background:#000;z-index:999;color:#ff4d5e;justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px;gap:10px}
 footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a{color:var(--g)}
+.rules{padding-left:20px;line-height:1.7;margin-top:8px}.rules li{margin-bottom:6px}
+.room{border-top:1px solid var(--line);padding:10px 0;margin-top:8px}.room b{color:#fff}.room small{color:var(--mut)}
+.kv{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.kv b{color:var(--g)}
+.cp{background:#1c2438;border:1px solid var(--line);color:var(--g);border-radius:8px;padding:5px 12px;font-weight:700;cursor:pointer;font-size:12px}
 </style></head>
 <body>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
@@ -82,6 +86,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="auth out-only"><h2>Browse matches, sign in to play</h2><p>Sign in to join matches and use your wallet. New players get 25 free coins.</p>
     <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button></div>
   <div class="auth in-only"><div class="bal"><small>Wallet balance</small><h2><span id="coins">0</span> Coins</h2></div></div>
+  <div class="card in-only"><h3>My Rooms</h3><p>Room ID and password of the matches you joined.</p><div id="roomList"></div><button class="gbtn" style="margin-top:10px" onclick="loadRooms()">Refresh</button></div>
   <div class="card"><h3>Connect with RRR Tournament</h3><p>Share the site, message us or follow us.</p><div class="conn" id="conn"></div></div>
   <div class="seg"><button id="tabMap" class="on" onclick="setTab('map')">Full Map Rooms</button><button id="tabCS" onclick="setTab('cs')">CS Rooms</button></div>
   <div id="homeList"></div>
@@ -123,6 +128,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <button class="back" onclick="show('vHome')">← Back</button>
   <div class="card"><h3 id="accName">Player</h3><p>Signed in with Google</p>
     <button class="gbtn" onclick="logout()">Logout</button></div>
+  <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
   <div class="card"><p><a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p></div>
 </section>
 <footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
@@ -154,7 +160,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MSG = {ROOM_FULL:'This room is full', LOW_BALANCE:'Not enough coins', ALREADY_JOINED:'You have already joined this match', MATCH_BANNED:'You are not allowed to join this match',
   AUTH_ERROR:'Your session expired. Please sign in again', INVALID:'Invalid data', DUPLICATE_UTR:'This Reference ID was already used',
-  MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates'};
+  MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates', UID_USED:'This Free Fire UID is already registered in this match'};
 const MODES = {Solo:{t:'Solo', s:'Full Map'}, Duo:{t:'Duo', s:'Full Map'}, Squad:{t:'Squad', s:'Full Map'}, CS:{t:'Clash Squad', s:'2 teams per room'}};
 const IMG = {Solo:'solo.jpg', Duo:'duo.jpg', Squad:'squad.jpg', CS:'cs.jpg'};
 let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '', tab = 'map';
@@ -194,7 +200,7 @@ async function enter() {
   let d;
   try { d = await api('checkPlayer', {name: userName}); } catch (e) { return alert('Could not connect to the server: ' + e); }
   if (d.status !== 'Active') return;
-  document.body.classList.add('in'); setCoins(d.coins);
+  document.body.classList.add('in'); setCoins(d.coins); loadRooms();
     loadNotifs();
 }
 function logout(msg) {
@@ -272,13 +278,13 @@ function confirmEntry(e) {
   guarded($('joinBtn'), async () => {
     const d = await api('joinMatch', {matchName: cur.name, uid: $('pUID').value.trim(), ign: $('pIGN').value.trim(),
       teamDetails: cur.mode === 'Solo' ? 'None (Solo)' : ($('pTeam').value.trim() || 'None')});
-    if (d.status === 'SUCCESS') { alert('🎉 Registration Complete!'); setCoins(d.newBalance); closeModals(); loadSlots(); }
+    if (d.status === 'SUCCESS') { alert('🎉 Registration Complete!'); setCoins(d.newBalance); closeModals(); loadSlots(); loadRooms(); }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status) + (d.msg ? ': ' + d.msg : ''));
   });
 }
 
 function openWallet() { if (!token) return loginWithGoogle(); show('vWallet'); }
-function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; show('vAccount'); }
+function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; loadRules(); show('vAccount'); }
 function submitPayment(e) {
   e.preventDefault();
   guarded(e.submitter, async () => {
@@ -323,8 +329,22 @@ function openNotifs() {
   $('notifModal').style.display = 'flex';
   if (UNREAD) { api('markRead').then(() => { $('badge').style.display = 'none'; UNREAD = 0; }); }
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadNotifs(); });
-setInterval(() => { if (document.visibilityState === 'visible') loadNotifs(); }, 300000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { loadNotifs(); loadRooms(); } });
+setInterval(() => { if (document.visibilityState === 'visible') { loadNotifs(); loadRooms(); } }, 300000);
+
+async function loadRooms() {
+  if (!token) return;
+  try {
+    const d = await api('getMyRooms'); if (d.status !== 'SUCCESS') return;
+    $('roomList').innerHTML = d.rooms.length ? d.rooms.map(r => `<div class="room"><b>${esc(r.name)}</b> <small>${r.time ? '• Starts ' + esc(r.time) : ''}</small>` + (r.roomId
+      ? `<div class="kv"><span>Room ID: <b>${esc(r.roomId)}</b></span><button class="cp" data-c="${esc(r.roomId)}" onclick="copyTxt(this.dataset.c)">Copy</button></div><div class="kv"><span>Password: <b>${esc(r.password)}</b></span><button class="cp" data-c="${esc(r.password)}" onclick="copyTxt(this.dataset.c)">Copy</button></div>`
+      : '<p style="margin-top:6px">Room details will be shared before the match starts.</p>') + '</div>').join('') : '<p class="empty">Join a match to see its Room ID and password here.</p>';
+  } catch (e) {}
+}
+function copyTxt(t) { navigator.clipboard.writeText(t).then(() => alert('Copied!')); }
+async function loadRules() {
+  try { const r = await (await fetch(WEB_APP_URL + '?action=getRules')).json(); $('rulesList').innerHTML = r.length ? r.map(x => `<li>${esc(x)}</li>`).join('') : '<li>No rules added yet.</li>'; } catch (e) {}
+}
 
 renderConn(); loadConfig();
 if (token) enter();

@@ -96,7 +96,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <button class="back" onclick="show('vHome')">← Back</button>
   <h2 class="stitle" id="mTitleH"></h2>
   <div id="mRows"></div>
-  <div class="card" id="rewardWrap"><h3>Full Map Rewards (Top 15)</h3><div id="rewardBox"></div></div>
+  <div class="card" id="rewardWrap"><h3 id="rewardTitle">Full Map Rewards</h3><div id="rewardBox"></div></div>
 </section>
 
 <section class="view" id="vWallet">
@@ -258,7 +258,7 @@ function renderRewards() {
     let j = i; while (j + 1 < REWARDS.length && REWARDS[j + 1] === REWARDS[i]) j++;
     h += `<div class="row2"><span>${i === j ? 'Position #' + (i + 1) : 'Position #' + (i + 1) + ' - #' + (j + 1)}</span><b class="or">${REWARDS[i]} Coins</b></div>`; i = j + 1;
   }
-  $('rewardBox').innerHTML = h;
+  $('rewardBox').innerHTML = h; $('rewardTitle').innerText = 'Full Map Rewards (Top ' + REWARDS.length + ')';
 }
 async function loadSlots() {
   try { COUNTS = await (await fetch(WEB_APP_URL + '?action=getSlots')).json(); renderHome(); if ($('vMatches').classList.contains('on')) renderMode(); } catch (e) {}

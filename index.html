@@ -103,8 +103,9 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <button class="back" onclick="show('vHome')">← Back</button>
   <div class="auth"><div class="bal"><small>Wallet balance</small><h2><span id="coins2">0</span> Coins</h2><small>Minimum withdrawal: 100 coins.</small></div></div>
   <div class="card"><h3>Add Coins</h3>
-    <p style="margin-bottom:10px">Scan the QR with e-Sewa and send the amount (minimum 25 NPR), then enter the Reference ID below. Coins are added to your wallet within 6-8 hours.</p>
-    <img src="qr.jpeg" alt="e-Sewa QR" onerror="this.style.display='none'" style="display:block;max-width:200px;margin:0 auto 14px;border-radius:10px">
+    <p style="margin-bottom:10px">Tap the Add Coins button below to see the e-Sewa QR and pay (minimum 25 NPR), then enter the Reference ID. Coins are added to your wallet within 6-8 hours.</p>
+    <button class="gbtn" type="button" id="qrBtn" onclick="toggleQR()" style="margin:0 0 12px">Add Coins</button>
+    <div id="qrBox" style="display:none;text-align:center;margin:0 0 14px"><img id="qrImg" alt="e-Sewa QR" style="max-width:220px;border-radius:10px"><p style="font-size:13px;margin-top:8px">Scan this QR in your e-Sewa app and send the amount.</p></div>
     <form onsubmit="submitPayment(event)">
       <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
       <div class="fg"><label>Amount Paid (NPR, minimum 25)</label><input id="payAmt" type="number" min="25" class="fc" required></div>
@@ -285,7 +286,12 @@ function confirmEntry(e) {
   });
 }
 
-function openWallet() { if (!token) return loginWithGoogle(); show('vWallet'); }
+function toggleQR() {
+  const box = $('qrBox'), open = box.style.display === 'none';
+  if (open && !$('qrImg').getAttribute('src')) $('qrImg').src = 'qr.jpeg';
+  box.style.display = open ? 'block' : 'none';
+}
+function openWallet() { if (!token) return loginWithGoogle(); $('qrBox').style.display = 'none'; show('vWallet'); }
 function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; loadRules(); show('vAccount'); }
 function submitPayment(e) {
   e.preventDefault();

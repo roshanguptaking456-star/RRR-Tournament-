@@ -105,12 +105,12 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="card"><h3>Add Coins</h3>
     <p style="margin-bottom:10px">Tap the Add Coins button below to see the e-Sewa QR and pay (minimum 25 NPR), then enter the Reference ID. Coins are added to your wallet within 6-8 hours.</p>
     <button class="gbtn" type="button" id="qrBtn" onclick="toggleQR()" style="margin:0 0 12px">Add Coins</button>
-    <div id="qrBox" style="display:none;text-align:center;margin:0 0 14px"><img id="qrImg" alt="e-Sewa QR" style="max-width:220px;border-radius:10px"><p style="font-size:13px;margin-top:8px">Scan this QR in your e-Sewa app and send the amount.</p></div>
+    <div id="payBox" style="display:none"><div id="qrBox" style="text-align:center;margin:0 0 14px"><img id="qrImg" alt="e-Sewa QR" style="max-width:220px;border-radius:10px"><p style="font-size:13px;margin-top:8px">Scan this QR in your e-Sewa app and send the amount.</p></div>
     <form onsubmit="submitPayment(event)">
       <div class="fg"><label>e-Sewa Reference ID</label><input id="payUTR" class="fc" required maxlength="40"></div>
       <div class="fg"><label>Amount Paid (NPR, minimum 25)</label><input id="payAmt" type="number" min="25" class="fc" required></div>
       <div class="fg"><label>Your IGN</label><input id="payIGN" class="fc" required maxlength="40"></div>
-      <button class="gbtn" type="submit">Submit Payment</button></form></div>
+      <button class="gbtn" type="submit">Submit Payment</button></form></div></div>
   <div class="card"><h3>Withdraw</h3><p>Withdrawals are sent to your e-Sewa within 6-8 hours.</p>
     <form onsubmit="submitWithdrawal(event)">
       <div class="fg"><label>e-Sewa ID (for withdrawal)</label><input id="wId" class="fc" required maxlength="40"></div>
@@ -287,11 +287,11 @@ function confirmEntry(e) {
 }
 
 function toggleQR() {
-  const box = $('qrBox'), open = box.style.display === 'none';
+  const box = $('payBox'), open = box.style.display === 'none';
   if (open && !$('qrImg').getAttribute('src')) $('qrImg').src = 'qr.jpeg';
   box.style.display = open ? 'block' : 'none';
 }
-function openWallet() { if (!token) return loginWithGoogle(); $('qrBox').style.display = 'none'; show('vWallet'); }
+function openWallet() { if (!token) return loginWithGoogle(); $('payBox').style.display = 'none'; show('vWallet'); }
 function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; loadRules(); show('vAccount'); }
 function submitPayment(e) {
   e.preventDefault();

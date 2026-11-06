@@ -94,6 +94,11 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button></div>
   <div class="auth in-only"><div class="bal"><small>Wallet balance</small><h2><span id="coins">0</span> Coins</h2></div></div>
   <div class="card in-only"><h3>My Rooms</h3><p>Room ID and password of the matches you joined.</p><div id="roomList"></div><button class="gbtn" style="margin-top:10px" onclick="loadRooms()">Refresh</button></div>
+  <div class="card in-only" id="refCard"><h3>🎁 Invite Friends</h3>
+    <p>Share your personal link with friends. When a new friend signs in with your link and plays a match, you get coins. Coins are guaranteed, and how many you get depends on your luck 🍀</p>
+    <input id="refLink" class="fc" readonly style="margin-top:12px" placeholder="Loading your link...">
+    <div class="conn"><button onclick="copyRef()"><span>📋</span>Copy link</button><button onclick="shareRef()"><span>📤</span>Share link</button></div>
+    <p id="refStat" style="margin-top:10px"></p></div>
   <div class="card"><h3>Connect with RRR Tournament</h3><p>Share the site, message us or follow us.</p><div class="conn" id="conn"></div></div>
   <div class="seg"><button id="tabMap" class="on" onclick="setTab('map')">Full Map Rooms</button><button id="tabCS" onclick="setTab('cs')">CS Rooms</button></div>
   <div id="homeList"></div>
@@ -398,7 +403,35 @@ function renderHist() {
   $('histBox').innerHTML = h ? '<div class="card">' + h + '</div>' : '<p class="empty">Nothing here yet.</p>';
 }
 
+/* ---------- NEW: referral system ---------- */
+{ const o = setCoins; setCoins = c => o(Math.round(Number(c) * 100) / 100); }   // shows coins like 25.13 instead of 25.130000000001
+let REFCODE = '', refBusy = false;
+try { const m = /[?&]ref=([A-Za-z0-9]{4,12})/.exec(location.search); if (m) localStorage.setItem('rrr_ref', m[1].toUpperCase()); } catch (e) {}
+function refLink() { return location.origin + location.pathname.replace(/index\.html$/, '') + '?ref=' + REFCODE; }
+function copyRef() { if (!REFCODE) return; navigator.clipboard.writeText(refLink()).then(() => alert('Invite link copied!')); }
+function shareRef() {
+  if (!REFCODE) return;
+  if (navigator.share) navigator.share({title:'RRR Tournament', text:'Join Free Fire matches on RRR Tournament and win coins! Use my link:', url: refLink()}).catch(() => {});
+  else copyRef();
+}
+async function refSync() {
+  try {
+    let saved = ''; try { saved = localStorage.getItem('rrr_ref') || ''; } catch (e) {}
+    if (saved) { const a = await api('applyReferral', {code: saved}); if (a && a.status) { try { localStorage.removeItem('rrr_ref'); } catch (e) {} } }
+    const d = await api('getReferral');
+    if (d.status === 'SUCCESS') {
+      REFCODE = d.code; $('refLink').value = refLink();
+      $('refStat').innerText = d.invited ? 'Friends joined with your link: ' + d.invited + ' • Friends who played: ' + d.played : '';
+    }
+  } catch (e) { refBusy = false; }
+}
+new MutationObserver(() => {
+  if (document.body.classList.contains('in')) { if (!refBusy) { refBusy = true; refSync(); } }
+  else { refBusy = false; REFCODE = ''; $('refLink').value = ''; $('refStat').innerText = ''; }
+}).observe(document.body, {attributes: true, attributeFilter: ['class']});
+
 renderConn(); loadConfig();
+{ const b = document.querySelector('#conn button[onclick="share()"]'); if (b) b.remove(); if (!$('conn').children.length) $('conn').parentElement.style.display = 'none'; }   // NEW: old Share button replaced by the referral card
 if (token) enter();
 </script>
 </body></html>

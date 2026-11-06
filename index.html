@@ -70,6 +70,13 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 .room{border-top:1px solid var(--line);padding:10px 0;margin-top:8px}.room b{color:#fff}.room small{color:var(--mut)}
 .kv{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.kv b{color:var(--g)}
 .cp{background:#1c2438;border:1px solid var(--line);color:var(--g);border-radius:8px;padding:5px 12px;font-weight:700;cursor:pointer;font-size:12px}
+/* NEW styles */
+#notifModal .x{display:none}
+.nbar{display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:0;background:var(--card);padding:4px 0 10px;margin-bottom:6px;z-index:2}
+.nbtn{background:#1c2438;border:1px solid var(--line);color:var(--g);border-radius:10px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer}
+.nbtn.red{color:#ff8a96;border-color:#5a2230}
+.hr1{display:flex;justify-content:space-between;gap:10px}.hr1 b{color:#fff}
+.st.w{color:var(--g)}
 </style></head>
 <body>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
@@ -129,8 +136,15 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <button class="back" onclick="show('vHome')">← Back</button>
   <div class="card"><h3 id="accName">Player</h3><p>Signed in with Google</p>
     <button class="gbtn" onclick="logout()">Logout</button></div>
+  <div class="card"><h3>My History</h3><p>Your matches, payments and withdrawals.</p><button class="gbtn" onclick="openHistory()">View History</button></div>
   <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
   <div class="card"><p><a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p></div>
+</section>
+<section class="view" id="vHistory">
+  <button class="back" onclick="show('vAccount')">← Back</button>
+  <h2 class="stitle">My History</h2>
+  <div class="seg"><button id="htm" class="on" onclick="setHist('m')">Matches</button><button id="htp" onclick="setHist('p')">Payments</button><button id="htw" onclick="setHist('w')">Withdrawals</button></div>
+  <div id="histBox"></div>
 </section>
 <footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
 </div>
@@ -151,7 +165,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <button class="gbtn" id="joinBtn" type="submit">Confirm Entry</button>
   </form></div></div>
 <div class="modal" id="notifModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span>
-  <h2 style="margin-bottom:10px">Notifications</h2><div id="nList"></div></div></div>
+  <div class="nbar"><button class="nbtn" onclick="closeModals()">← Back</button><button class="nbtn red" onclick="clearNotifs()">🗑 Clear all</button></div><h2 style="margin-bottom:10px">Notifications</h2><div id="nList"></div></div></div>
 
 <script>
 const WEB_APP_URL = APP_CONFIG.webAppUrl;
@@ -352,6 +366,36 @@ async function loadRooms() {
 function copyTxt(t) { navigator.clipboard.writeText(t).then(() => alert('Copied!')); }
 async function loadRules() {
   try { const r = await (await fetch(WEB_APP_URL + '?action=getRules')).json(); $('rulesList').innerHTML = r.length ? r.map(x => `<li>${esc(x)}</li>`).join('') : '<li>No rules added yet.</li>'; } catch (e) {}
+}
+
+/* ---------- NEW: clear notifications, history, new messages ---------- */
+NAVOF.vHistory = 'nAcc';
+Object.assign(MSG, {DAILY_LIMIT:'You can send only 3 payment requests per day. Try again tomorrow', MATCH_CLOSED:'This match is closed'});
+async function clearNotifs() {
+  if (!NOTIFS.length) return;
+  if (!confirm('Delete all your notifications?')) return;
+  try {
+    const d = await api('clearNotifications');
+    if (d.status === 'SUCCESS') { NOTIFS = []; UNREAD = 0; $('badge').style.display = 'none'; $('nList').innerHTML = '<p class="empty">No notifications yet.</p>'; }
+    else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
+  } catch (e) { alert('Error: ' + e); }
+}
+let HIST = null, hTab = 'm';
+async function openHistory() {
+  show('vHistory'); $('histBox').innerHTML = '<p class="empty">Loading...</p>';
+  try { const d = await api('getHistory'); if (d.status !== 'SUCCESS') return; HIST = d; renderHist(); }
+  catch (e) { $('histBox').innerHTML = '<p class="empty">Could not load history.</p>'; }
+}
+function setHist(t) { hTab = t; ['m', 'p', 'w'].forEach(k => $('ht' + k).classList.toggle('on', k === t)); renderHist(); }
+function stCls(s) { s = String(s); return /Approved|Settled|Credited|Won/.test(s) ? 'o' : /Reject/.test(s) ? 'f' : 'w'; }
+function renderHist() {
+  if (!HIST) return;
+  const item = (t, right, sub) => `<div class="n"><div class="hr1"><b>${esc(t)}</b>${right}</div><small>${esc(sub)}</small></div>`;
+  let h = '';
+  if (hTab === 'm') h = HIST.matches.map(x => item(x.name, `<span class="st ${stCls(x.result)}">${esc(x.result)}</span>`, x.when)).join('');
+  else if (hTab === 'p') h = HIST.payments.map(x => item(x.amount + ' NPR', `<span class="st ${stCls(x.status)}">${esc(x.status)}</span>`, x.when + ' • Ref ' + x.ref)).join('');
+  else h = HIST.withdrawals.map(x => item(x.coins + ' Coins', `<span class="st ${stCls(x.status)}">${esc(x.status)}</span>`, x.when)).join('');
+  $('histBox').innerHTML = h ? '<div class="card">' + h + '</div>' : '<p class="empty">Nothing here yet.</p>';
 }
 
 renderConn(); loadConfig();

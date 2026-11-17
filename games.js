@@ -9,12 +9,13 @@ const GM = {
   target: {name:'Target Tap', icon:'🎯', time:'45 seconds', desc:'Same targets for everyone. Tap fast and do not miss.',
     rules:['Everyone gets the same targets in the same places.','Tap a target before it disappears: +10 points.','Tapping empty space: -2 points.','The game lasts 45 seconds.']}
 };
-let CFG = {commission:.2, minFee:5, maxFee:500, playMin:10, openMin:30, games:{}}, OPEN = [], MINE = [], K = '', cur = null, stopFn = null, joinId = '';
+let PROFILE = {ign:'', uid:''}, CFG = {commission:.2, minFee:5, maxFee:500, playMin:10, openMin:30, games:{}}, OPEN = [], MINE = [], K = '', cur = null, stopFn = null, joinId = '';
 const slots = n => n <= 2 ? 1 : n <= 5 ? 2 : 3, SPL = {1:[1], 2:[.65,.35], 3:[.5,.3,.2]};
 const pool = (f, n) => Math.floor(f * n * (1 - CFG.commission) + 1e-9);
 const prizes = (f, n) => SPL[slots(n)].map(x => Math.floor(pool(f, n) * x + 1e-9));
 const lim = k => (CFG.games && CFG.games[k]) || {min:2, max:8};
 const ORD = ['1st', '2nd', '3rd'];
+const fail = d => '❌ ' + (MSG[d.status] || d.status) + (d.status === 'ERROR' && d.msg ? ' (' + d.msg + ')' : '');
 const mins = ms => Math.max(0, Math.ceil((ms - Date.now()) / 60000)) + ' min';
 
 /* ---------- random numbers (same seed = same game for everyone) ---------- */
@@ -105,7 +106,7 @@ const css = `.gh{display:flex;justify-content:space-between;align-items:center}.
 .gtag{font-size:11px;letter-spacing:1px;color:var(--mut);font-weight:700}.gchips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.gb{display:flex;gap:8px;flex-wrap:wrap}.gb .nbtn{flex:1}
 .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:360px;margin:0 auto}.mcell{aspect-ratio:1;font-size:30px;border-radius:12px;border:1px solid var(--line);background:#1c2438;color:var(--g);cursor:pointer}
 .mcell.up{background:#0e1422;color:#fff}.mcell.ok{background:#12351f;border-color:#4ade80}#gpHud{text-align:center;color:var(--g);font-weight:700;margin-bottom:10px;min-height:20px}
-.tabbar a{font-size:11px}`;
+.tabbar a{font-size:11px}.gr{padding-left:32px;line-height:1.7;margin:6px 0 14px}.gr li{margin-bottom:6px}.balchip{background:#1c2438;border:1px solid var(--line);color:var(--g);font-weight:700;font-size:13px;border-radius:20px;padding:8px 12px;white-space:nowrap}`;
 function build() {
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
   const tab = document.createElement('a'); tab.id = 'nGames'; tab.innerHTML = '<span>🕹️</span>Games'; tab.onclick = openGames;
@@ -118,17 +119,17 @@ function build() {
   <button class="gbtn" style="margin:0 0 14px" onclick="RRRG.create()">➕ Create Match</button><div id="glRows"></div></section>
 <section class="view" id="vGamePlay"><button class="back" id="gpBack" onclick="RRRG.leave()">← Back</button><h2 class="stitle" id="gpTitle"></h2><div id="gpHud"></div><div id="gArena"></div><div id="gpMsg"></div></section>`);
   document.body.insertAdjacentHTML('beforeend', `
-<div class="modal" id="gRulesModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><h2 id="grTitle" style="margin-bottom:10px"></h2><ol class="rules" id="grList"></ol></div></div>
-<div class="modal" id="gCreateModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><h2 style="margin-bottom:12px">Create Match</h2>
+<div class="modal" id="gRulesModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><div class="nbar"><button class="nbtn" onclick="closeModals()">← Back</button></div><h2 id="grTitle" style="margin-bottom:10px"></h2><div id="grList"></div></div></div>
+<div class="modal" id="gCreateModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><div class="nbar"><button class="nbtn" onclick="closeModals()">← Back</button></div><h2 style="margin-bottom:12px">Create Match</h2>
   <form onsubmit="RRRG.doCreate(event)">
   <div class="fg"><label>Game</label><select id="gcGame" class="fc" onchange="RRRG.prev(true)"></select></div>
   <div class="fg"><label>Entry fee per player (coins)</label><input id="gcFee" type="number" class="fc" required oninput="RRRG.prev()"></div>
   <div class="fg"><label>Max players in the room</label><select id="gcMax" class="fc" onchange="RRRG.prev()"></select></div>
-  <div class="fg"><label>Your In-Game Name</label><input id="gcIgn" class="fc" required maxlength="40"></div>
+  <div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="gcIgn" class="fc" required maxlength="40"></div>
   <div class="card" id="gcPrev" style="font-size:13px"></div>
   <button class="gbtn" id="gcBtn" type="submit">Create and pay entry fee</button></form></div></div>
-<div class="modal" id="gJoinModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><h2 id="gjTitle" style="margin-bottom:6px"></h2><p id="gjInfo" style="margin-bottom:12px;font-size:13px"></p>
-  <form onsubmit="RRRG.doJoin(event)"><div class="fg"><label>Your In-Game Name</label><input id="gjIgn" class="fc" required maxlength="40"></div>
+<div class="modal" id="gJoinModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><div class="nbar"><button class="nbtn" onclick="closeModals()">← Back</button></div><h2 id="gjTitle" style="margin-bottom:6px"></h2><p id="gjInfo" style="margin-bottom:12px;font-size:13px"></p>
+  <form onsubmit="RRRG.doJoin(event)"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="gjIgn" class="fc" required maxlength="40"></div>
   <button class="gbtn" id="gjBtn" type="submit">Join and pay entry fee</button></form></div></div>`);
   NAVOF.vGames = NAVOF.vGameList = NAVOF.vGamePlay = 'nGames';
 }
@@ -137,7 +138,7 @@ function build() {
 async function load() {
   try { const d = await (await fetch(WEB_APP_URL + '?action=getGameMatches')).json(); if (d.cfg) CFG = d.cfg; OPEN = d.matches || []; } catch (e) {}
   MSG.BAD_FEE = 'Entry fee must be between ' + CFG.minFee + ' and ' + CFG.maxFee + ' coins';
-  if (token) { try { const d = await api('gameMine'); if (d.status === 'SUCCESS') MINE = d.mine; } catch (e) {} } else MINE = [];
+  if (token) { try { const d = await api('gameMine'); if (d.status === 'SUCCESS') { MINE = d.mine; if (d.profile) { PROFILE = d.profile; fillProfile(); } } } catch (e) {} } else MINE = [];
   renderCards(); renderMine(); if ($('vGameList').classList.contains('on')) renderList();
 }
 function openGames() { show('vGames'); load(); }
@@ -177,18 +178,18 @@ function list(k) { K = k; show('vGameList'); renderList(); load(); }
 
 /* ---------- rules ---------- */
 function rules(k) {
-  const g = GM[k], l = lim(k), pc = Math.round(CFG.commission * 100);
+  const g = GM[k], l = lim(k), pc = Math.round(CFG.commission * 100), li = a => a.map(x => '<li>' + esc(x) + '</li>').join('');
   $('grTitle').innerText = g.icon + ' ' + g.name + ' - Rules';
-  $('grList').innerHTML = g.rules.concat([
+  $('grList').innerHTML = '<h4 style="margin-top:4px">How to play</h4><ol class="gr">' + li(g.rules) + '</ol><h4>Contest rules</h4><ol class="gr">' + li([
     'FREE PLAY is for practice. It is solo and no coins are used.',
     'CREATE MATCH: the creator chooses the entry fee and the max players (' + l.min + ' to ' + l.max + '). The entry fee is taken from your wallet when you create or join.',
-    'The room starts when it is full, or when the creator taps Start now (at least ' + l.min + ' players). If it is not full after ' + CFG.openMin + ' minutes, it starts with ' + l.min + '+ players, otherwise it is cancelled and everybody is refunded.',
+    'The room starts when it is full, or when the creator taps Start now (at least ' + l.min + ' players). If it is not full after ' + CFG.openMin + ' minutes, it starts if ' + l.min + '+ players joined, otherwise it is cancelled and everybody is refunded.',
     'Prize pool = all entry fees minus ' + pc + '% service fee. 2 players: winner takes all. 3 to 5 players: 1st 65%, 2nd 35%. 6 to 8 players: 1st 50%, 2nd 30%, 3rd 20%.',
     'After the room starts you have ' + CFG.playMin + ' minutes to press Play. You get only ONE try. If you do not play, you lose your entry fee.',
     'Do not leave or close the game while playing. A try that is not finished is lost.',
     'Highest score wins. Same score: the player who finished first wins.',
     'Scores are checked automatically. Impossible scores are rejected, the entry fee is not returned, and the account can be banned. Using more than one account in the same room is not allowed.'
-  ]).map(x => '<li>' + esc(x) + '</li>').join('');
+  ]) + '</ol>';
   $('gRulesModal').style.display = 'flex';
 }
 
@@ -198,7 +199,7 @@ function create(k) {
   k = k || K || 'rail';
   $('gcGame').innerHTML = Object.keys(GM).map(x => `<option value="${x}">${GM[x].name}</option>`).join(''); $('gcGame').value = k;
   $('gcFee').min = CFG.minFee; $('gcFee').max = CFG.maxFee; $('gcFee').value = Math.max(CFG.minFee, 10);
-  try { $('gcIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {}
+  $('gcIgn').value = PROFILE.ign || ''; if (!$('gcIgn').value) { try { $('gcIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {} }
   prev(true); $('gCreateModal').style.display = 'flex';
 }
 function prev(newGame) {
@@ -213,7 +214,7 @@ function doCreate(e) {
   guarded($('gcBtn'), async () => {
     const d = await api('gameCreate', {game: $('gcGame').value, fee: $('gcFee').value, max: $('gcMax').value, ign});
     if (d.status === 'SUCCESS') { try { localStorage.setItem('rrr_game_ign', ign); } catch (x) {} setCoins(d.newBalance); closeModals(); K = $('gcGame').value; alert('✅ Room created! Share the game with friends so they can join.'); load(); list(K); }
-    else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
+    else if (d.status !== 'Banned') alert(fail(d));
   });
 }
 function join(id) {
@@ -221,7 +222,7 @@ function join(id) {
   const m = OPEN.find(x => x.id === id); if (!m) return; joinId = id;
   $('gjTitle').innerText = GM[m.game].name + ' - ' + m.fee + ' coins';
   $('gjInfo').innerHTML = esc(m.by) + "'s room • " + m.n + '/' + m.max + ' players • prize if room fills: <b style="color:var(--g)">' + pool(m.fee, m.max) + ' coins</b>';
-  try { $('gjIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {}
+  $('gjIgn').value = PROFILE.ign || ''; if (!$('gjIgn').value) { try { $('gjIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {} }
   $('gJoinModal').style.display = 'flex';
 }
 function doJoin(e) {
@@ -229,13 +230,13 @@ function doJoin(e) {
   guarded($('gjBtn'), async () => {
     const d = await api('gameJoin', {matchId: joinId, ign});
     if (d.status === 'SUCCESS') { try { localStorage.setItem('rrr_game_ign', ign); } catch (x) {} setCoins(d.newBalance); closeModals(); alert(d.live ? '🎉 Joined! The room is full and the match is LIVE. Go to Games > My Game Matches and tap Play now.' : '✅ Joined! Wait for the room to fill.'); load(); }
-    else if (d.status !== 'Banned') { alert('❌ ' + (MSG[d.status] || d.status)); load(); }
+    else if (d.status !== 'Banned') { alert(fail(d)); load(); }
   });
 }
 function simple(btn, name, id, ok) {
   guarded(btn, async () => {
     const d = await api(name, {matchId: id});
-    if (d.status === 'SUCCESS') { if (d.newBalance != null) setCoins(d.newBalance); alert(ok); } else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
+    if (d.status === 'SUCCESS') { if (d.newBalance != null) setCoins(d.newBalance); alert(ok); } else if (d.status !== 'Banned') alert(fail(d));
     load();
   });
 }
@@ -254,7 +255,7 @@ async function go(btn) {
   btn.disabled = true; let seed = Math.floor(Math.random() * 2e9);
   if (cur.matchId) {
     let d; try { d = await api('gamePlay', {matchId: cur.matchId}); } catch (e) { btn.disabled = false; return alert('Network error. Please try again.'); }
-    if (d.status !== 'SUCCESS') { if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status)); return leave(); }
+    if (d.status !== 'SUCCESS') { if (d.status !== 'Banned') alert(fail(d)); return leave(); }
     seed = d.seed; $('gpBack').style.display = 'none';
   }
   $('gArena').innerHTML = ''; stopFn = ENG[cur.k]({el: $('gArena'), seed, hud: t => { $('gpHud').innerText = t; }, end: finish});
@@ -270,7 +271,7 @@ async function send() {
     try {
       const d = await api('gameSubmit', {matchId: cur.matchId, score: cur.score});
       if (d.newBalance != null) setCoins(d.newBalance);
-      const t = d.status !== 'SUCCESS' ? '❌ ' + (MSG[d.status] || d.status) : d.flagged ? '⚠️ Your score could not be verified, so it was not counted.' : '✅ Score ' + d.score + ' submitted. Results come when all players finish or time ends. Check Games > My Game Matches.';
+      const t = d.status !== 'SUCCESS' ? fail(d) : d.flagged ? '⚠️ Your score could not be verified, so it was not counted.' : '✅ Score ' + d.score + ' submitted. Results come when all players finish or time ends. Check Games > My Game Matches.';
       $('gpMsg').innerHTML = `<div class="card" style="text-align:center;margin-top:12px"><p style="color:#fff">${esc(t)}</p><button class="gbtn" onclick="RRRG.leave()">Back to Games</button></div>`; return;
     } catch (e) { await new Promise(r => setTimeout(r, 1500)); }
   }
@@ -278,7 +279,26 @@ async function send() {
 }
 function leave() { if (stopFn) { stopFn(); stopFn = null; } $('gArena').innerHTML = ''; show('vGames'); load(); }
 
-window.RRRG = {rules, list, free, play, go, create, prev, doCreate, join, doJoin, begin, cancel, leave, refresh: load, retry: send};
+function fillProfile() { if ($('pfIgn')) { $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfBtn').innerText = PROFILE.ign || PROFILE.uid ? 'Save changes' : 'Save'; } }
+async function loadProfile() { try { const d = await api('gameProfileGet'); if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); } } catch (e) {} }
+function saveProfile(e) {
+  e.preventDefault();
+  guarded($('pfBtn'), async () => {
+    const d = await api('gameProfileSave', {ign: $('pfIgn').value.trim(), uid: $('pfUid').value.trim()});
+    if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN will fill automatically in the Games section.'); } else if (d.status !== 'Banned') alert(fail(d));
+  });
+}
+window.RRRG = {saveProfile, rules, list, free, play, go, create, prev, doCreate, join, doJoin, begin, cancel, leave, refresh: load, retry: send};
 build();
+/* balance next to the bell */
+document.querySelector('.top .in-only').insertAdjacentHTML('beforebegin', '<span class="in-only balchip">🪙 <b id="topBal">' + $('coins').innerText + '</b></span>');
+{ const o = setCoins; setCoins = c => { o(c); $('topBal').innerText = $('coins').innerText; }; }
+/* Game Profile card in Account */
+$('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Game Profile <small style="color:var(--mut);font-size:12px">(optional)</small></h3><p>Only for the new Games section. Your IGN fills automatically there.</p>
+  <form onsubmit="RRRG.saveProfile(event)" style="margin-top:10px"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="pfIgn" class="fc" maxlength="40" placeholder="Your name in the game"></div>
+  <div class="fg"><label>UID <small style="color:var(--mut)">(User ID)</small></label><input id="pfUid" class="fc" inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only (optional)"></div>
+  <button class="gbtn" id="pfBtn" type="submit">Save</button></form></div>`);
+{ const oa = openAccount; openAccount = function () { oa(); if (token) loadProfile(); }; }
+new MutationObserver(() => { if (!document.body.classList.contains('in')) { PROFILE = {ign: '', uid: ''}; fillProfile(); $('topBal').innerText = '0'; MINE = []; } }).observe(document.body, {attributes: true, attributeFilter: ['class']});
 setInterval(() => { if (document.visibilityState === 'visible' && ($('vGames').classList.contains('on') || $('vGameList').classList.contains('on'))) load(); }, 20000);
 })();

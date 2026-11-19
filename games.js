@@ -7,7 +7,13 @@ const GM = {
   memory: {name:'Memory Match', icon:'🧠', time:'Up to 90 seconds', desc:'Same card board for everyone. Find all pairs with fewest moves.',
     rules:['Everyone gets the same hidden card board.','Tap two cards to flip them. Matching cards stay open.','Find all 8 pairs. Faster time and fewer moves = higher score (max 1000).','If 90 seconds pass, you get 20 points for every pair found.']},
   target: {name:'Target Tap', icon:'🎯', time:'45 seconds', desc:'Same targets for everyone. Tap fast and do not miss.',
-    rules:['Everyone gets the same targets in the same places.','Tap a target before it disappears: +10 points.','Tapping empty space: -2 points.','The game lasts 45 seconds.']}
+    rules:['Everyone gets the same targets in the same places.','Tap a target before it disappears: +10 points.','Tapping empty space: -2 points.','The game lasts 45 seconds.']},
+  math: {name:'Math Blitz', icon:'➕', time:'45 seconds', desc:'Same questions for everyone. Solve as many as you can.',
+    rules:['Everyone gets the same questions in the same order.','Tap the correct answer out of 4 options.','Correct answer = +10 points. Wrong answer = -5 points (score never goes below 0).','The game lasts 45 seconds.']},
+  dodge: {name:'Dodge Fall', icon:'☄️', time:'Up to 60 seconds', desc:'Same falling objects for everyone. Collect gems, dodge bombs.',
+    rules:['Everyone gets the same falling gems and bombs.','Drag your finger left/right (or use the arrow keys) to move.','Every gem = 10 points. Every second you survive = 1 point.','Hitting a bomb costs 1 of your 3 lives. The game ends after 60 seconds or when all lives are gone.']},
+  color: {name:'Color Match', icon:'🎨', time:'30 seconds', desc:'Same words for everyone. Tap the COLOR of the word, not what it says.',
+    rules:['A color word is shown in some ink color. Example: the word RED may be written in blue.','Tap the button that matches the INK COLOR of the word, not the word itself.','Correct = +10 points. Wrong = -5 points (score never goes below 0).','The game lasts 30 seconds. Everyone gets the same words in the same order.']}
 };
 let PROFILE = {ign:'', uid:''}, CFG = {commission:.2, minFee:5, maxFee:500, playMin:10, openMin:30, games:{}}, OPEN = [], MINE = [], K = '', cur = null, stopFn = null, joinId = '';
 const slots = n => n <= 2 ? 1 : n <= 5 ? 2 : 3, SPL = {1:[1], 2:[.65,.35], 3:[.5,.3,.2]};
@@ -99,14 +105,86 @@ function target(c) {
   });
   return () => { stop(); over = true; };
 }
-const ENG = {rail, memory, target};
+/* ---------- GAME 4: Math Blitz ---------- */
+function math(c) {
+  const R = rng(c.seed), Q = [];
+  for (let i = 0; i < 150; i++) {
+    const t = Math.floor(R() * 3); let a, b, ans, txt;
+    if (t === 0) { a = 3 + Math.floor(R() * 40); b = 3 + Math.floor(R() * 40); ans = a + b; txt = a + ' + ' + b; }
+    else if (t === 1) { a = 20 + Math.floor(R() * 60); b = 3 + Math.floor(R() * 17); ans = a - b; txt = a + ' − ' + b; }
+    else { a = 2 + Math.floor(R() * 9); b = 2 + Math.floor(R() * 9); ans = a * b; txt = a + ' × ' + b; }
+    const o = [ans]; let guard = 0;
+    while (o.length < 4 && guard++ < 50) { const d = (1 + Math.floor(R() * 9)) * (R() < .5 ? -1 : 1), v = ans + d; if (v >= 0 && o.indexOf(v) < 0) o.push(v); }
+    while (o.length < 4) o.push(ans + o.length + 10);
+    for (let k = o.length - 1; k > 0; k--) { const j = Math.floor(R() * (k + 1)); [o[k], o[j]] = [o[j], o[k]]; }
+    Q.push({txt, ans, o});
+  }
+  const q = document.createElement('div'); q.className = 'mbq'; c.el.appendChild(q);
+  const box = document.createElement('div'); box.className = 'mbgrid'; c.el.appendChild(box);
+  let i = 0, score = 0, over = false; const t0 = performance.now(), sec = () => (performance.now() - t0) / 1000;
+  const btn = [0, 1, 2, 3].map(k => { const b = document.createElement('button'); b.className = 'mbbtn'; b.onclick = () => pick(k); box.appendChild(b); return b; });
+  function show() { const x = Q[i]; q.textContent = x.txt + ' = ?'; btn.forEach((b, k) => { b.textContent = x.o[k]; }); }
+  function pick(k) { if (over) return; if (Q[i].o[k] === Q[i].ans) score += 10; else score = Math.max(0, score - 5); i++; if (i >= Q.length) return fin(); show(); }
+  function fin() { if (over) return; over = true; c.end(score); }
+  show();
+  const iv = setInterval(() => { c.hud('Score ' + score + '  •  ' + Math.max(0, Math.ceil(45 - sec())) + 's'); if (sec() >= 45) fin(); }, 200);
+  return () => { clearInterval(iv); over = true; };
+}
+
+/* ---------- GAME 5: Dodge Fall ---------- */
+function dodge(c) {
+  const W = 320, H = 420, PY = 380, cv = mkCanvas(c, W, H), g = cv.getContext('2d'), R = rng(c.seed), items = [];
+  for (let i = 0; i < 130; i++) items.push({x: 22 + R() * 276, t: 1 + i * .5, v: 190 + R() * 70, gem: R() < .3, d: false});
+  let px = W / 2, lives = 3, gems = 0, t = 0, flash = 0, over = false, dir = 0;
+  const setX = e => { const r = cv.getBoundingClientRect(); px = Math.max(18, Math.min(W - 18, (e.clientX - r.left) * W / r.width)); };
+  cv.onpointerdown = e => { setX(e); try { cv.setPointerCapture(e.pointerId); } catch (x) {} };
+  cv.onpointermove = e => { if (e.buttons || e.pointerType === 'touch') setX(e); };
+  const kd = e => { if (e.key === 'ArrowLeft') dir = -1; if (e.key === 'ArrowRight') dir = 1; }, ku = e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') dir = 0; };
+  window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+  const stop = loop(dt => {
+    if (over) return;
+    t += dt; flash = Math.max(0, flash - dt); px = Math.max(18, Math.min(W - 18, px + dir * 260 * dt));
+    g.fillStyle = flash > 0 ? '#3a1218' : '#0e1422'; g.fillRect(0, 0, W, H);
+    items.forEach(o => {
+      if (o.d || t < o.t) return; const y = (t - o.t) * o.v - 20;
+      if (y > H + 20) { o.d = true; return; }
+      if (Math.abs(o.x - px) < 26 && Math.abs(y - PY) < 24) { o.d = true; if (o.gem) gems++; else { lives--; flash = .3; } return; }
+      if (o.gem) { g.fillStyle = '#22d3ee'; g.beginPath(); g.moveTo(o.x, y - 12); g.lineTo(o.x + 10, y); g.lineTo(o.x, y + 12); g.lineTo(o.x - 10, y); g.closePath(); g.fill(); }
+      else { g.fillStyle = '#e11d48'; g.beginPath(); g.arc(o.x, y, 12, 0, 7); g.fill(); g.fillStyle = '#ffb400'; g.fillRect(o.x - 2, y - 18, 4, 7); }
+    });
+    g.fillStyle = '#ffb400'; g.fillRect(px - 20, PY - 12, 40, 24);
+    const score = gems * 10 + Math.floor(t);
+    c.hud('Score ' + score + '  •  ' + '❤'.repeat(Math.max(lives, 0)) + '  •  ' + Math.max(0, Math.ceil(60 - t)) + 's');
+    if (t >= 60 || lives <= 0) { over = true; c.end(score); }
+  });
+  return () => { stop(); over = true; window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); };
+}
+
+/* ---------- GAME 6: Color Match ---------- */
+function color(c) {
+  const N = ['RED', 'GREEN', 'BLUE', 'YELLOW'], H = ['#e11d48', '#22c55e', '#3b82f6', '#ffb400'], R = rng(c.seed), Q = [];
+  for (let i = 0; i < 200; i++) { const ink = Math.floor(R() * 4); let w = ink; if (R() < .7) w = (ink + 1 + Math.floor(R() * 3)) % 4; Q.push({w, ink}); }
+  const q = document.createElement('div'); q.className = 'cmword'; c.el.appendChild(q);
+  const box = document.createElement('div'); box.className = 'cmgrid'; c.el.appendChild(box);
+  let i = 0, score = 0, over = false; const t0 = performance.now(), sec = () => (performance.now() - t0) / 1000;
+  H.forEach((h, k) => { const b = document.createElement('button'); b.className = 'cmbtn'; b.style.background = h; b.onclick = () => pick(k); box.appendChild(b); });
+  function show() { q.textContent = N[Q[i].w]; q.style.color = H[Q[i].ink]; }
+  function pick(k) { if (over) return; if (k === Q[i].ink) score += 10; else score = Math.max(0, score - 5); i++; if (i >= Q.length) return fin(); show(); }
+  function fin() { if (over) return; over = true; c.end(score); }
+  show();
+  const iv = setInterval(() => { c.hud('Score ' + score + '  •  ' + Math.max(0, Math.ceil(30 - sec())) + 's'); if (sec() >= 30) fin(); }, 200);
+  return () => { clearInterval(iv); over = true; };
+}
+const ENG = {rail, memory, target, math, dodge, color};
 
 /* ---------- page parts (added to the site by this file) ---------- */
 const css = `.gh{display:flex;justify-content:space-between;align-items:center}.gi{width:48px;height:48px;border-radius:14px;background:#1c2438;display:flex;align-items:center;justify-content:center;font-size:26px}
 .gtag{font-size:11px;letter-spacing:1px;color:var(--mut);font-weight:700}.gchips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.gb{display:flex;gap:8px;flex-wrap:wrap}.gb .nbtn{flex:1}
 .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:360px;margin:0 auto}.mcell{aspect-ratio:1;font-size:30px;border-radius:12px;border:1px solid var(--line);background:#1c2438;color:var(--g);cursor:pointer}
 .mcell.up{background:#0e1422;color:#fff}.mcell.ok{background:#12351f;border-color:#4ade80}#gpHud{text-align:center;color:var(--g);font-weight:700;margin-bottom:10px;min-height:20px}
-.tabbar a{font-size:11px}.gr{padding-left:32px;line-height:1.7;margin:6px 0 14px}.gr li{margin-bottom:6px}.balchip{background:#1c2438;border:1px solid var(--line);color:var(--g);font-weight:700;font-size:13px;border-radius:20px;padding:8px 12px;white-space:nowrap}`;
+.tabbar a{font-size:11px}.gr{padding-left:32px;line-height:1.7;margin:6px 0 14px}.gr li{margin-bottom:6px}.balchip{background:#1c2438;border:1px solid var(--line);color:var(--g);font-weight:700;font-size:13px;border-radius:20px;padding:8px 12px;white-space:nowrap}
+.mbq{text-align:center;font-family:Oswald,sans-serif;font-size:38px;color:#fff;margin:10px 0 16px}.mbgrid,.cmgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;margin:0 auto}.mbbtn{padding:18px 0;font-size:26px;font-weight:700;border-radius:12px;border:1px solid var(--line);background:#1c2438;color:var(--g);cursor:pointer}.mbbtn:active{background:#0e1422}
+.cmword{text-align:center;font-family:Oswald,sans-serif;font-size:56px;margin:14px 0 20px;letter-spacing:2px}.cmbtn{height:84px;border-radius:14px;border:3px solid #0a0e17;cursor:pointer}.cmbtn:active{opacity:.7}`;
 function build() {
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
   const tab = document.createElement('a'); tab.id = 'nGames'; tab.innerHTML = '<span>🕹️</span>Games'; tab.onclick = openGames;

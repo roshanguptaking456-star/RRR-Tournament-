@@ -800,24 +800,24 @@ async function send() {
 }
 function leave() { if (stopFn) { stopFn(); stopFn = null; } $('gArena').innerHTML = ''; show('vGames'); load(); }
 
-function fillProfile() { if ($('pfIgn')) { $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfBtn').innerText = PROFILE.ign || PROFILE.uid ? 'Save changes' : 'Save'; } }
+function fillProfile() { if ($('pfIgn')) { $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfUid').readOnly = !!PROFILE.uid; $('pfNote').innerText = PROFILE.uid ? 'Your UID is locked. To change it, contact the admin.' : 'Required. Check your UID carefully, it cannot be changed later.'; $('pfBtn').innerText = PROFILE.uid ? 'Save changes' : 'Save'; } }
 async function loadProfile() { try { const d = await api('gameProfileGet'); if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); } } catch (e) {} }
 function saveProfile(e) {
   e.preventDefault();
   guarded($('pfBtn'), async () => {
     const d = await api('gameProfileSave', {ign: $('pfIgn').value.trim(), uid: $('pfUid').value.trim()});
-    if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN will fill automatically in the Games section.'); } else if (d.status !== 'Banned') alert(fail(d));
+    if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN and UID are filled automatically in matches and games.'); } else if (d.status !== 'Banned') alert(fail(d));
   });
 }
-window.RRRG = {saveProfile, rules, list, free, play, go, create, prev, doCreate, join, doJoin, begin, cancel, leave, refresh: load, retry: send};
+window.RRRG = {syncProfile: p => { PROFILE = p; fillProfile(); }, saveProfile, rules, list, free, play, go, create, prev, doCreate, join, doJoin, begin, cancel, leave, refresh: load, retry: send};
 build();
 /* balance next to the bell */
 document.querySelector('.top .in-only').insertAdjacentHTML('beforebegin', '<span class="in-only balchip">🪙 <b id="topBal">' + $('coins').innerText + '</b></span>');
 { const o = setCoins; setCoins = c => { o(c); $('topBal').innerText = $('coins').innerText; }; }
 /* Game Profile card in Account */
-$('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Game Profile <small style="color:var(--mut);font-size:12px">(optional)</small></h3><p>Only for the new Games section. Your IGN fills automatically there.</p>
-  <form onsubmit="RRRG.saveProfile(event)" style="margin-top:10px"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="pfIgn" class="fc" maxlength="40" placeholder="Your name in the game"></div>
-  <div class="fg"><label>UID <small style="color:var(--mut)">(User ID)</small></label><input id="pfUid" class="fc" inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only (optional)"></div>
+$('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Game Profile <small style="color:var(--mut);font-size:12px">(required)</small></h3><p id="pfNote">Required. Check your UID carefully, it cannot be changed later.</p>
+  <form onsubmit="RRRG.saveProfile(event)" style="margin-top:10px"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="pfIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in the game"></div>
+  <div class="fg"><label>UID <small style="color:var(--mut)">(User ID)</small></label><input id="pfUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
   <button class="gbtn" id="pfBtn" type="submit">Save</button></form></div>`);
 { const oa = openAccount; openAccount = function () { oa(); if (token) loadProfile(); }; }
 new MutationObserver(() => { if (!document.body.classList.contains('in')) { PROFILE = {ign: '', uid: ''}; fillProfile(); $('topBal').innerText = '0'; MINE = []; } }).observe(document.body, {attributes: true, attributeFilter: ['class']});

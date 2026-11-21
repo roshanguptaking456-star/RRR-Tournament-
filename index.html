@@ -90,7 +90,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <form onsubmit="saveGate(event)">
     <div class="fg"><label>In-Game Name (IGN)</label><input id="gIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in Free Fire"></div>
     <div class="fg"><label>Free Fire UID</label><input id="gUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
-    <p class="lgnote" style="margin:0 0 6px">Check your UID carefully. It <b>cannot be changed later</b> (only the admin can change it).</p>
+    <p class="lgnote" style="margin:0 0 6px">Check your IGN and UID carefully. After saving, you can change them <b>only after 3 days</b>.</p>
     <button class="gbtn" id="gBtn" type="submit">Save and continue</button>
   </form>
   <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="logout()">Logout</button>
@@ -214,7 +214,7 @@ const MSG = {ROOM_FULL:'This room is full', LOW_BALANCE:'Not enough coins', ALRE
   AUTH_ERROR:'Your session expired. Please sign in again', INVALID:'Invalid data', DUPLICATE_UTR:'This Reference ID was already used',
   MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates', UID_USED:'This Free Fire UID is already registered in this match',
   BAD_LOGIN:'Wrong email or password. If you have never set a password, continue with Google first and set one in Account.', LOCKED:'Too many wrong attempts. Try again after 15 minutes, or continue with Google.', WEAK_PASSWORD:'Password must be 8 to 64 characters and contain at least one letter and one number.', BAD_OLD:'Your current password is wrong.',
-  PROFILE_REQUIRED:'Please complete your Game Profile (IGN + UID) first.', UID_MISMATCH:'The UID must be the UID saved in your Game Profile.', UID_TAKEN:'This UID is already used by another account.', UID_LOCKED:'Your UID is locked. Contact the admin to change it.', BAD_UID:'UID must be numbers only (6 to 15 digits).', BAD_IGN:'Enter your in-game name (at least 2 characters).'};
+  PROFILE_REQUIRED:'Please complete your Game Profile (IGN + UID) first.', UID_MISMATCH:'The UID must be the UID saved in your Game Profile.', UID_TAKEN:'This UID is already used by another account.', PROFILE_WAIT:'You can change your IGN/UID only once every 3 days.', BAD_UID:'UID must be numbers only (6 to 15 digits).', BAD_IGN:'Enter your in-game name (at least 2 characters).'};
 const MODES = {Solo:{t:'Solo', s:'Full Map'}, Duo:{t:'Duo', s:'Full Map'}, Squad:{t:'Squad', s:'Full Map'}, CS:{t:'Clash Squad', s:'2 teams per room'}};
 const IMG = {Solo:'solo.jpg', Duo:'duo.jpg', Squad:'squad.jpg', CS:'cs.jpg'};
 let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '', tab = 'map';
@@ -289,7 +289,9 @@ async function checkProfile() {
 function saveGate(e) {
   e.preventDefault();
   guarded($('gBtn'), async () => {
-    const d = await api('gameProfileSave', {ign: $('gIgn').value.trim(), uid: $('gUid').value.trim()});
+    const gi = $('gIgn').value.trim(), gu = $('gUid').value.trim();
+    if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nYou cannot change these for 3 days after saving. Is this correct?')) return;
+    const d = await api('gameProfileSave', {ign: gi, uid: gu});
     if (d.status === 'SUCCESS') { PROF = d.profile; if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
   });

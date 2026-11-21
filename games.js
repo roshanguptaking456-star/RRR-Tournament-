@@ -800,12 +800,21 @@ async function send() {
 }
 function leave() { if (stopFn) { stopFn(); stopFn = null; } $('gArena').innerHTML = ''; show('vGames'); load(); }
 
-function fillProfile() { if ($('pfIgn')) { $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfUid').readOnly = !!PROFILE.uid; $('pfNote').innerText = PROFILE.uid ? 'Your UID is locked. To change it, contact the admin.' : 'Required. Check your UID carefully, it cannot be changed later.'; $('pfBtn').innerText = PROFILE.uid ? 'Save changes' : 'Save'; } }
+function fillProfile() {
+  if (!$('pfIgn')) return;
+  const lock = PROFILE.lockUntil && PROFILE.lockUntil > Date.now(), has = !!(PROFILE.ign && PROFILE.uid);
+  $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfIgn').readOnly = !!lock; $('pfUid').readOnly = !!lock; $('pfBtn').disabled = !!lock;
+  $('pfNote').innerText = lock ? '🔒 You can change your IGN/UID after ' + new Date(PROFILE.lockUntil).toLocaleString() + '.' : has ? 'You can change your IGN/UID now. After saving a change you must wait 3 days before changing again.' : 'Required. Check your IGN and UID carefully, after saving you can change them only after 3 days.';
+  $('pfBtn').innerText = has ? 'Save changes' : 'Save';
+}
 async function loadProfile() { try { const d = await api('gameProfileGet'); if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); } } catch (e) {} }
 function saveProfile(e) {
   e.preventDefault();
   guarded($('pfBtn'), async () => {
-    const d = await api('gameProfileSave', {ign: $('pfIgn').value.trim(), uid: $('pfUid').value.trim()});
+    const gi = $('pfIgn').value.trim(), gu = $('pfUid').value.trim();
+    if (gi !== (PROFILE.ign || '') || gu !== (PROFILE.uid || '')) { if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nAfter saving you cannot change these for 3 days. Is this correct?')) return; } else return alert('Nothing changed.');
+    const d = await api('gameProfileSave', {ign: gi, uid: gu});
+    if (d.status === 'PROFILE_WAIT') return alert('🔒 You can change your IGN/UID after ' + new Date(d.until).toLocaleString() + '.');
     if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN and UID are filled automatically in matches and games.'); } else if (d.status !== 'Banned') alert(fail(d));
   });
 }

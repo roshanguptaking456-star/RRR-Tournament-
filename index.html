@@ -275,7 +275,7 @@ async function pwLogin(e) {
       const st = $('lgRem').checked ? localStorage : sessionStorage, pre = $('lgRem').checked ? 'rrr_' : '';
       try { sessionStorage.clear(); localStorage.removeItem('rrr_tok'); st.setItem(pre ? 'rrr_tok' : 'tok', token); st.setItem(pre ? 'rrr_nm' : 'nm', userName); st.setItem(pre ? 'rrr_em' : 'em', userEmail); localStorage.setItem('rrr_lastmail', userEmail); } catch (x) {}
       $('lgPw').value = ''; enter();
-    } else alert('❌ ' + (MSG[r.status] || 'Login failed. Please try again.'));
+    } else alert('❌ ' + (MSG[r.status] || 'Login failed. Please try again.') + (r.status === 'ERROR' && r.msg ? '\n\n(' + r.msg + ')' : ''));
   } catch (err) { alert('Could not connect to the server. Check your internet and try again.'); }
   b.disabled = false;
 }

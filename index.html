@@ -78,8 +78,23 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 .nbtn.red{color:#ff8a96;border-color:#5a2230}
 .hr1{display:flex;justify-content:space-between;gap:10px}.hr1 b{color:#fff}
 .st.w{color:var(--g)}
+.or{display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:var(--mut);font-size:12px;font-weight:700}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.pww{position:relative}.pww .fc{padding-right:46px}.pww .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:18px;cursor:pointer;color:var(--mut);padding:6px}
+.lgform{margin-top:6px;text-align:left}.lgform .fg{margin-bottom:10px}.lgnote{font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5}.rem{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:2px 0 0}
+.gate{display:none;position:fixed;inset:0;background:rgba(5,8,15,.97);z-index:9000;justify-content:center;align-items:center;overflow:auto}
 </style></head>
 <body>
+<div class="gate" id="profGate"><div class="modal-c">
+  <h2 style="margin-bottom:6px">🎮 Complete your Game Profile</h2>
+  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join matches or games. One Free Fire UID can be used on only one account.</p>
+  <form onsubmit="saveGate(event)">
+    <div class="fg"><label>In-Game Name (IGN)</label><input id="gIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in Free Fire"></div>
+    <div class="fg"><label>Free Fire UID</label><input id="gUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
+    <p class="lgnote" style="margin:0 0 6px">Check your UID carefully. It <b>cannot be changed later</b> (only the admin can change it).</p>
+    <button class="gbtn" id="gBtn" type="submit">Save and continue</button>
+  </form>
+  <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="logout()">Logout</button>
+</div></div>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
 <div class="app">
 <div class="top">
@@ -92,7 +107,15 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 
 <section class="view on" id="vHome">
   <div class="auth out-only"><h2>Browse matches, sign in to play</h2><p>Sign in to join matches and use your wallet. New players get 25 free coins.</p>
-    <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button></div>
+    <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button>
+    <div class="or">OR LOGIN WITH PASSWORD</div>
+    <form class="lgform" onsubmit="pwLogin(event)">
+      <div class="fg"><label>Email</label><input id="lgEmail" class="fc" type="email" autocomplete="username" required placeholder="The email you use on this site"></div>
+      <div class="fg"><label>Password</label><div class="pww"><input id="lgPw" class="fc" type="password" autocomplete="current-password" required maxlength="100" placeholder="Your site password"><button type="button" class="eye" onclick="tglPw('lgPw', this)">👁</button></div></div>
+      <label class="rem"><input type="checkbox" id="lgRem" checked> Keep me logged in on this device</label>
+      <button class="gbtn" id="lgBtn" type="submit">Login with password</button>
+      <p class="lgnote">First time? Tap "Continue with Google" once, then open Account and set a password. After that you can log in with either.<br>Forgot your password? Continue with Google and set a new one in Account.</p>
+    </form></div>
   <div class="auth in-only"><div class="bal"><small>Wallet balance</small><h2><span id="coins">0</span> Coins</h2></div></div>
   <div class="card in-only"><h3>My Rooms</h3><p>Room ID and password of the matches you joined.</p><div id="roomList"></div><button class="gbtn" style="margin-top:10px" onclick="loadRooms()">Refresh</button></div>
   <div class="card in-only" id="refCard"><h3>🎁 Invite Friends</h3>
@@ -140,8 +163,16 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 
 <section class="view" id="vAccount">
   <button class="back" onclick="show('vHome')">← Back</button>
-  <div class="card"><h3 id="accName">Player</h3><p>Signed in with Google</p>
+  <div class="card"><h3 id="accName">Player</h3><p id="accVia">Signed in with Google</p><p id="accMail" style="font-size:13px"></p>
     <button class="gbtn" onclick="logout()">Logout</button></div>
+  <div class="card"><h3>🔑 Site Password</h3><p id="pwInfo">Set a password so you can log in without Google every time.</p>
+    <form onsubmit="pwSave(event)" style="margin-top:10px">
+      <div class="fg" id="pwOldBox" style="display:none"><label>Current password</label><div class="pww"><input id="pwOld" class="fc" type="password" autocomplete="current-password" maxlength="100"><button type="button" class="eye" onclick="tglPw('pwOld', this)">👁</button></div></div>
+      <div class="fg"><label>New password</label><div class="pww"><input id="pwNew" class="fc" type="password" autocomplete="new-password" minlength="8" maxlength="64" required placeholder="8+ characters, letters and numbers"><button type="button" class="eye" onclick="tglPw('pwNew', this)">👁</button></div></div>
+      <div class="fg"><label>Repeat new password</label><input id="pwNew2" class="fc" type="password" autocomplete="new-password" minlength="8" maxlength="64" required></div>
+      <button class="gbtn" id="pwBtn" type="submit">Set password</button>
+    </form>
+    <p class="lgnote">Forgot your password? Logout, continue with Google, then set a new one here. Changing the password logs you out on all other devices.</p></div>
   <div class="card"><h3>My History</h3><p>Your matches, payments and withdrawals.</p><button class="gbtn" onclick="openHistory()">View History</button></div>
   <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
   <div class="card"><p><a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p></div>
@@ -181,11 +212,13 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MSG = {ROOM_FULL:'This room is full', LOW_BALANCE:'Not enough coins', ALREADY_JOINED:'You have already joined this match', MATCH_BANNED:'You are not allowed to join this match',
   AUTH_ERROR:'Your session expired. Please sign in again', INVALID:'Invalid data', DUPLICATE_UTR:'This Reference ID was already used',
-  MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates', UID_USED:'This Free Fire UID is already registered in this match'};
+  MIN_LIMIT_ERROR:'Minimum withdrawal is 100 coins', MIN_DEPOSIT:'Minimum payment is 25 NPR', INSUFFICIENT_BALANCE:'Insufficient balance', ERROR:'Server error', TEAM_REQUIRED:'Enter the Name + UID of your 3 teammates', UID_USED:'This Free Fire UID is already registered in this match',
+  BAD_LOGIN:'Wrong email or password. If you have never set a password, continue with Google first and set one in Account.', LOCKED:'Too many wrong attempts. Try again after 15 minutes, or continue with Google.', WEAK_PASSWORD:'Password must be 8 to 64 characters and contain at least one letter and one number.', BAD_OLD:'Your current password is wrong.',
+  PROFILE_REQUIRED:'Please complete your Game Profile (IGN + UID) first.', UID_MISMATCH:'The UID must be the UID saved in your Game Profile.', UID_TAKEN:'This UID is already used by another account.', UID_LOCKED:'Your UID is locked. Contact the admin to change it.', BAD_UID:'UID must be numbers only (6 to 15 digits).', BAD_IGN:'Enter your in-game name (at least 2 characters).'};
 const MODES = {Solo:{t:'Solo', s:'Full Map'}, Duo:{t:'Duo', s:'Full Map'}, Squad:{t:'Squad', s:'Full Map'}, CS:{t:'Clash Squad', s:'2 teams per room'}};
 const IMG = {Solo:'solo.jpg', Duo:'duo.jpg', Squad:'squad.jpg', CS:'cs.jpg'};
 let MATCHES = [], REWARDS = [], COUNTS = {}, NOTIFS = [], UNREAD = 0, cur = null, curMode = '', tab = 'map';
-let token = sessionStorage.getItem('tok') || '', userName = sessionStorage.getItem('nm') || '';
+let token = sessionStorage.getItem('tok') || localStorage.getItem('rrr_tok') || '', userName = sessionStorage.getItem('nm') || localStorage.getItem('rrr_nm') || '', userEmail = sessionStorage.getItem('em') || localStorage.getItem('rrr_em') || '';
 const key = m => m.type === 'CS' ? 'CS' : m.mode;
 const NAVOF = {vHome:'nHome', vMatches:'nHome', vWinners:'nWin', vWallet:'nWal', vAccount:'nAcc'};
 
@@ -210,8 +243,9 @@ function loginWithGoogle() {
     callback: async r => {
       if (!r.access_token) return alert('Login was cancelled or failed');
       token = r.access_token;
-      try { userName = (await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer ' + token}})).json()).name || ''; } catch (e) {}
-      sessionStorage.setItem('tok', token); sessionStorage.setItem('nm', userName);
+      try { const ui = await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer ' + token}})).json(); userName = ui.name || ''; userEmail = ui.email || ''; } catch (e) {}
+      sessionStorage.setItem('tok', token); sessionStorage.setItem('nm', userName); sessionStorage.setItem('em', userEmail);
+      try { localStorage.removeItem('rrr_tok'); localStorage.removeItem('rrr_nm'); localStorage.removeItem('rrr_em'); } catch (e) {}
       enter();
     }
   }).requestAccessToken();
@@ -222,11 +256,63 @@ async function enter() {
   try { d = await api('checkPlayer', {name: userName}); } catch (e) { return alert('Could not connect to the server: ' + e); }
   if (d.status !== 'Active') return;
   document.body.classList.add('in'); setCoins(d.coins); loadRooms();
-    loadNotifs();
+    loadNotifs(); checkProfile();
 }
 function logout(msg) {
-  sessionStorage.clear(); token = ''; document.body.classList.remove('in'); closeModals(); show('vHome');
+  sessionStorage.clear(); try { localStorage.removeItem('rrr_tok'); localStorage.removeItem('rrr_nm'); localStorage.removeItem('rrr_em'); } catch (e) {} token = ''; userEmail = ''; $('profGate').style.display = 'none'; document.body.classList.remove('in'); closeModals(); show('vHome');
   if (typeof msg === 'string') alert(msg);
+}
+
+let PROF = {ign:'', uid:''};
+function needLogin() { show('vHome'); window.scrollTo(0, 0); const e = $('lgEmail'); if (e) e.focus(); }
+function tglPw(id, b) { const i = $(id); i.type = i.type === 'password' ? 'text' : 'password'; b.innerText = i.type === 'password' ? '👁' : '🙈'; }
+async function pwLogin(e) {
+  e.preventDefault(); const b = $('lgBtn'); b.disabled = true; const em = $('lgEmail').value.trim();
+  try {
+    const r = await (await fetch(WEB_APP_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'pwLogin', email: em, password: $('lgPw').value})})).json();
+    if (r.status === 'SUCCESS') {
+      token = r.token; userName = r.name || ''; userEmail = em.toLowerCase();
+      const st = $('lgRem').checked ? localStorage : sessionStorage, pre = $('lgRem').checked ? 'rrr_' : '';
+      try { sessionStorage.clear(); localStorage.removeItem('rrr_tok'); st.setItem(pre ? 'rrr_tok' : 'tok', token); st.setItem(pre ? 'rrr_nm' : 'nm', userName); st.setItem(pre ? 'rrr_em' : 'em', userEmail); localStorage.setItem('rrr_lastmail', userEmail); } catch (x) {}
+      $('lgPw').value = ''; enter();
+    } else alert('❌ ' + (MSG[r.status] || 'Login failed. Please try again.'));
+  } catch (err) { alert('Could not connect to the server. Check your internet and try again.'); }
+  b.disabled = false;
+}
+try { const lm = localStorage.getItem('rrr_lastmail'); if (lm && $('lgEmail')) $('lgEmail').value = lm; } catch (e) {}
+async function checkProfile() {
+  try {
+    const d = await api('gameProfileGet');
+    if (d.status === 'SUCCESS') { PROF = d.profile || PROF; if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); if (!PROF.ign || !PROF.uid) $('profGate').style.display = 'flex'; }
+  } catch (err) {}
+}
+function saveGate(e) {
+  e.preventDefault();
+  guarded($('gBtn'), async () => {
+    const d = await api('gameProfileSave', {ign: $('gIgn').value.trim(), uid: $('gUid').value.trim()});
+    if (d.status === 'SUCCESS') { PROF = d.profile; if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; }
+    else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
+  });
+}
+async function pwLoad() {
+  try {
+    const d = await api('pwStatus'); if (d.status !== 'SUCCESS') return;
+    $('pwOldBox').style.display = d.viaPassword && d.hasPassword ? 'block' : 'none'; $('pwOld').required = d.viaPassword && d.hasPassword;
+    $('pwInfo').innerText = d.hasPassword ? 'You can log in with your email and this password, or with Google.' : 'Set a password so you can log in without Google every time.';
+    $('pwBtn').innerText = d.hasPassword ? 'Change password' : 'Set password';
+  } catch (e) {}
+}
+function pwSave(e) {
+  e.preventDefault();
+  if ($('pwNew').value !== $('pwNew2').value) return alert('❌ The two new passwords are not the same.');
+  guarded($('pwBtn'), async () => {
+    const d = await api('pwSet', {newPassword: $('pwNew').value, oldPassword: $('pwOld').value});
+    if (d.status === 'SUCCESS') {
+      if (d.token) { token = d.token; if (sessionStorage.getItem('tok')) sessionStorage.setItem('tok', token); if (localStorage.getItem('rrr_tok')) localStorage.setItem('rrr_tok', token); }
+      $('pwNew').value = ''; $('pwNew2').value = ''; $('pwOld').value = ''; pwLoad();
+      alert('✅ Password saved. You can now log in with your email and this password.' + (userEmail ? '\nYour login email: ' + userEmail : ''));
+    } else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
+  });
 }
 
 function share() {
@@ -288,9 +374,10 @@ async function loadSlots() {
 }
 
 function openMatch(id) {
-  if (!token) return loginWithGoogle();
+  if (!token) return needLogin();
   cur = MATCHES.find(m => m.id === id);
   $('mTitle').innerText = cur.name + ' — ' + cur.fee + ' Coins';
+  $('pUID').value = PROF.uid || ''; $('pUID').readOnly = true; $('pIGN').value = PROF.ign || '';
   $('teamBox').style.display = cur.mode === 'Solo' ? 'none' : 'block';
   $('pTeam').required = cur.mode !== 'Solo';
   $('matchModal').style.display = 'flex';
@@ -311,8 +398,8 @@ function toggleQR() {
   if (open && !$('qrImg').getAttribute('src')) $('qrImg').src = 'qr.jpeg';
   box.style.display = open ? 'block' : 'none';
 }
-function openWallet() { if (!token) return loginWithGoogle(); $('payBox').style.display = 'none'; show('vWallet'); }
-function openAccount() { if (!token) return loginWithGoogle(); $('accName').innerText = userName || 'Player'; loadRules(); show('vAccount'); }
+function openWallet() { if (!token) return needLogin(); $('payBox').style.display = 'none'; show('vWallet'); }
+function openAccount() { if (!token) return needLogin(); $('accName').innerText = userName || 'Player'; $('accVia').innerText = token.indexOf('rrr1.') === 0 ? 'Signed in with password' : 'Signed in with Google'; $('accMail').innerText = userEmail ? 'Your login email: ' + userEmail : ''; loadRules(); pwLoad(); show('vAccount'); }
 function submitPayment(e) {
   e.preventDefault();
   guarded(e.submitter, async () => {

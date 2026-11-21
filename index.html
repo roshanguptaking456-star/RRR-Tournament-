@@ -86,14 +86,14 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 <body>
 <div class="gate" id="profGate"><div class="modal-c">
   <h2 style="margin-bottom:6px">🎮 Complete your Game Profile</h2>
-  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join matches or games. One Free Fire UID can be used on only one account.</p>
+  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join a match or a game room. One Free Fire UID can be used on only one account.</p>
   <form onsubmit="saveGate(event)">
     <div class="fg"><label>In-Game Name (IGN)</label><input id="gIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in Free Fire"></div>
     <div class="fg"><label>Free Fire UID</label><input id="gUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
     <p class="lgnote" style="margin:0 0 6px">Check your IGN and UID carefully. After saving, you can change them <b>only after 3 days</b>.</p>
     <button class="gbtn" id="gBtn" type="submit">Save and continue</button>
   </form>
-  <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="logout()">Logout</button>
+  <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="profNext = null; $('profGate').style.display = 'none'">Not now</button>
 </div></div>
 <div class="ban" id="banScreen"><h1>ACCESS TERMINATED</h1><p style="color:#fff">Your account has been banned by the admin.</p><p style="color:#fff" id="banReason"></p></div>
 <div class="app">
@@ -259,11 +259,18 @@ async function enter() {
     loadNotifs(); checkProfile();
 }
 function logout(msg) {
-  sessionStorage.clear(); try { localStorage.removeItem('rrr_tok'); localStorage.removeItem('rrr_nm'); localStorage.removeItem('rrr_em'); } catch (e) {} token = ''; userEmail = ''; $('profGate').style.display = 'none'; document.body.classList.remove('in'); closeModals(); show('vHome');
+  sessionStorage.clear(); try { localStorage.removeItem('rrr_tok'); localStorage.removeItem('rrr_nm'); localStorage.removeItem('rrr_em'); } catch (e) {} token = ''; userEmail = ''; $('profGate').style.display = 'none'; PROF = {ign:'', uid:'', loaded:false}; profNext = null; document.body.classList.remove('in'); closeModals(); show('vHome');
   if (typeof msg === 'string') alert(msg);
 }
 
-let PROF = {ign:'', uid:''};
+let PROF = {ign:'', uid:'', loaded:false}, profNext = null;
+function profOk() { return !!(PROF.ign && PROF.uid); }
+async function needProfile(next) {   // the Game Profile screen is shown only when a player tries to join something
+  if (!PROF.loaded) await checkProfile();
+  if (!PROF.loaded) return alert('Could not load your profile. Check your internet and try again.');
+  if (profOk()) return next();
+  profNext = next; $('profGate').style.display = 'flex';
+}
 function needLogin() { show('vHome'); window.scrollTo(0, 0); const e = $('lgEmail'); if (e) e.focus(); }
 function tglPw(id, b) { const i = $(id); i.type = i.type === 'password' ? 'text' : 'password'; b.innerText = i.type === 'password' ? '👁' : '🙈'; }
 async function pwLogin(e) {
@@ -283,7 +290,7 @@ try { const lm = localStorage.getItem('rrr_lastmail'); if (lm && $('lgEmail')) $
 async function checkProfile() {
   try {
     const d = await api('gameProfileGet');
-    if (d.status === 'SUCCESS') { PROF = d.profile || PROF; if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); if (!PROF.ign || !PROF.uid) $('profGate').style.display = 'flex'; }
+    if (d.status === 'SUCCESS') { PROF = Object.assign({ign:'', uid:''}, d.profile || {}, {loaded:true}); if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); }
   } catch (err) {}
 }
 function saveGate(e) {
@@ -292,7 +299,7 @@ function saveGate(e) {
     const gi = $('gIgn').value.trim(), gu = $('gUid').value.trim();
     if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nYou cannot change these for 3 days after saving. Is this correct?')) return;
     const d = await api('gameProfileSave', {ign: gi, uid: gu});
-    if (d.status === 'SUCCESS') { PROF = d.profile; if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; }
+    if (d.status === 'SUCCESS') { PROF = Object.assign({}, d.profile, {loaded:true}); if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; const nx = profNext; profNext = null; if (nx) nx(); }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
   });
 }
@@ -376,6 +383,7 @@ async function loadSlots() {
 }
 
 function openMatch(id) {
+  if (token && !profOk()) return needProfile(() => openMatch(id));
   if (!token) return needLogin();
   cur = MATCHES.find(m => m.id === id);
   $('mTitle').innerText = cur.name + ' — ' + cur.fee + ' Coins';

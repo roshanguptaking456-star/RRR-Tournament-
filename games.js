@@ -716,7 +716,8 @@ function rules(k) {
 
 /* ---------- create / join ---------- */
 function create(k) {
-  if (!token) return loginWithGoogle();
+  if (token && !profOk()) return needProfile(() => create(k));
+  if (!token) return needLogin();
   k = k || K || 'rail';
   $('gcGame').innerHTML = Object.keys(GM).map(x => `<option value="${x}">${GM[x].name}</option>`).join(''); $('gcGame').value = k;
   $('gcFee').min = CFG.minFee; $('gcFee').max = CFG.maxFee; $('gcFee').value = Math.max(CFG.minFee, 10);
@@ -739,7 +740,8 @@ function doCreate(e) {
   });
 }
 function join(id) {
-  if (!token) return loginWithGoogle();
+  if (token && !profOk()) return needProfile(() => join(id));
+  if (!token) return needLogin();
   const m = OPEN.find(x => x.id === id); if (!m) return; joinId = id;
   $('gjTitle').innerText = GM[m.game].name + ' - ' + m.fee + ' coins';
   $('gjInfo').innerHTML = esc(m.by) + "'s room • " + m.n + '/' + m.max + ' players • prize if room fills: <b style="color:var(--g)">' + pool(m.fee, m.max) + ' coins</b>';

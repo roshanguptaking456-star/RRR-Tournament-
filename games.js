@@ -357,10 +357,10 @@ const fail = d => '❌ ' + (MSG[d.status] || d.status) + (d.status === 'ERROR' &
 const mins = ms => Math.max(0, Math.ceil((ms - Date.now()) / 60000)) + ' min';
 /* ---------- helpers ---------- */
 function loop(fn) { let id, last = performance.now(), stop = false; const f = now => { if (stop) return; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt); id = requestAnimationFrame(f); }; id = requestAnimationFrame(f); return () => { stop = true; cancelAnimationFrame(id); }; }
-function mkCv(c, W, H) {
+function mkCv(c, W, H, fit) {
   const dpr = Math.min(2, window.devicePixelRatio || 1), cv = document.createElement('canvas');
   cv.width = W * dpr; cv.height = H * dpr;
-  cv.style.cssText = 'width:100%;max-width:360px;display:block;margin:0 auto;background:#0e1422;border:1px solid #222c42;border-radius:14px;touch-action:none;user-select:none;-webkit-user-select:none';
+  cv.style.cssText = 'width:100%;' + (fit ? 'width:min(100%,360px,max(210px,calc((100vh - 350px) * ' + (W / H) + ')));width:min(100%,360px,max(210px,calc((100dvh - 350px) * ' + (W / H) + ')));' : '') + 'max-width:360px;display:block;margin:0 auto;background:#0e1422;border:1px solid #222c42;border-radius:14px;touch-action:none;user-select:none;-webkit-user-select:none';
   c.el.appendChild(cv); const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
   return {cv, g, pos: e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }};
 }
@@ -401,7 +401,7 @@ function sim(id, c, mk) {
 
 /* ================= RAIL RUSH (pseudo 3D train game) ================= */
 function railView(c, put, st) {
-  const W = 320, H = 480, HZ = 120, BASE = 404, SP = 88, {cv, g} = mkCv(c, W, H);
+  const W = 320, H = 480, HZ = 120, BASE = 404, SP = 88, {cv, g} = mkCv(c, W, H, true);
   let vl = 1, shake = 0, lastHit = 0, tm = 0, moved = false, sx = 0, sy = 0;
   const S = d => 1 / (1 + d * .16), Y = s => HZ + (BASE - HZ) * s, X = (l, s) => 160 + (l - 1) * SP * s;
   const city = []; for (let i = 0; i < 16; i++) city.push([i * 22 - 6, 14 + (i * 37 % 19), 18 + (i * 53 % 46)]);
@@ -463,7 +463,7 @@ function railView(c, put, st) {
 
 /* ================= DODGE FALL ================= */
 function dodgeView(c, put, st) {
-  const W = 320, H = 420, {cv, g, pos} = mkCv(c, W, H); let want = null, tm = 0, lastHit = 0, flash = 0; const stars = []; for (let i = 0; i < 50; i++) stars.push([Math.random() * W, Math.random() * H, .5 + Math.random() * 1.8]);
+  const W = 320, H = 420, {cv, g, pos} = mkCv(c, W, H, true); let want = null, tm = 0, lastHit = 0, flash = 0; const stars = []; for (let i = 0; i < 50; i++) stars.push([Math.random() * W, Math.random() * H, .5 + Math.random() * 1.8]);
   const setW = e => { want = clamp(Math.round(pos(e)[0]), 18, 302); };
   cv.onpointerdown = e => { setW(e); try { cv.setPointerCapture(e.pointerId); } catch (x) {} }; cv.onpointermove = e => { if (e.buttons || e.pointerType === 'touch') setW(e); };
   pad(c, [['◀', () => { want = 0; }, () => { want = st.px; }], ['▶', () => { want = 320; }, () => { want = st.px; }]]);
@@ -572,7 +572,7 @@ function colorView(c, put, st) {
 
 /* ================= NEON SNAKE ================= */
 function snakeView(c, put, st) {
-  const W = 320, {cv, g} = mkCv(c, W, W), CS = 20; let sx = 0, sy = 0, sw = false, tm = 0;
+  const W = 320, {cv, g} = mkCv(c, W, W, true), CS = 20; let sx = 0, sy = 0, sw = false, tm = 0;
   cv.onpointerdown = e => { sx = e.clientX; sy = e.clientY; sw = false; try { cv.setPointerCapture(e.pointerId); } catch (x) {} };
   cv.onpointermove = e => { const dx = e.clientX - sx, dy = e.clientY - sy; if (Math.max(Math.abs(dx), Math.abs(dy)) > 18) { put(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); sx = e.clientX; sy = e.clientY; } };
   pad(c, [['◀', () => put(3)], ['▲', () => put(0)], ['▼', () => put(2)], ['▶', () => put(1)]]);

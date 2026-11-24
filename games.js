@@ -815,7 +815,8 @@ function saveProfile(e) {
   guarded($('pfBtn'), async () => {
     const gi = $('pfIgn').value.trim(), gu = $('pfUid').value.trim();
     if (gi !== (PROFILE.ign || '') || gu !== (PROFILE.uid || '')) { if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nAfter saving you cannot change these for 3 days. Is this correct?')) return; } else return alert('Nothing changed.');
-    const d = await api('gameProfileSave', {ign: gi, uid: gu});
+    const d = await api('gameProfileSave', {ign: gi, uid: gu, scanId: SHOT.id});
+    if (shotHandle(d, 'pfUid', 'pfIgn')) return;
     if (d.status === 'PROFILE_WAIT') return alert('🔒 You can change your IGN/UID after ' + new Date(d.until).toLocaleString() + '.');
     if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN and UID are filled automatically in matches and games.'); } else if (d.status !== 'Banned') alert(fail(d));
   });
@@ -829,6 +830,7 @@ document.querySelector('.top .in-only').insertAdjacentHTML('beforebegin', '<span
 $('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Game Profile <small style="color:var(--mut);font-size:12px">(required)</small></h3><p id="pfNote">Required. Check your UID carefully, it cannot be changed later.</p>
   <form onsubmit="RRRG.saveProfile(event)" style="margin-top:10px"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="pfIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in the game"></div>
   <div class="fg"><label>UID <small style="color:var(--mut)">(User ID)</small></label><input id="pfUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
+  <div class="fg"><label>📸 Free Fire profile screenshot <small style="color:var(--mut)">(needed when you set or change your UID)</small></label><input type="file" id="pfShot" accept="image/*" class="fc" onchange="shotPick(this,'pfUid','pfIgn','pfShotMsg')"><p class="lgnote" id="pfShotMsg" style="margin:6px 0 0"></p></div>
   <button class="gbtn" id="pfBtn" type="submit">Save</button></form></div>`);
 { const oa = openAccount; openAccount = function () { oa(); if (token) loadProfile(); }; }
 new MutationObserver(() => { if (!document.body.classList.contains('in')) { PROFILE = {ign: '', uid: ''}; fillProfile(); $('topBal').innerText = '0'; MINE = []; } }).observe(document.body, {attributes: true, attributeFilter: ['class']});

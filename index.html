@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0a0e17">
+<link rel="manifest" href="manifest.json"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RRR Tournament">
 <meta name="description" content="RRR Tournament Nepal: join daily Free Fire Solo, Duo, Squad and Clash Squad matches and play mini games. Win coins and withdraw with eSewa.">
 <link rel="canonical" href="https://rrrfftournament.netlify.app/">
 <meta property="og:type" content="website"><meta property="og:site_name" content="RRR Tournament">
@@ -86,12 +87,15 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 :root{--nbot:0px}
 /* Mobile: Netlify's 'Powered by Netlify' badge sits at the bottom-right and covers the Account tab, so lift the tab bar above it. Set --nbot back to 0px once the badge is removed. */
 @media (max-width:700px){:root{--nbot:62px}body:has(#vGamePlay.on) .top,body:has(#vGamePlay.on) .pcnote{display:none}.tabbar{border-radius:18px;border:1px solid var(--line);box-shadow:0 -4px 18px rgba(0,0,0,.5)}}
+.cd{color:#4ade80;font-weight:700;font-size:12px;margin-left:6px}
+.lgnote a{color:var(--g)}
 </style></head>
 <body>
 <div class="gate" id="profGate"><div class="modal-c">
   <h2 style="margin-bottom:6px">🎮 Complete your Game Profile</h2>
   <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join a match or a game room. One Free Fire UID can be used on only one account.</p>
   <form onsubmit="saveGate(event)">
+    <div class="fg"><label>📸 Free Fire profile screenshot <small style="color:var(--mut)">(required)</small></label><input type="file" id="gShot" accept="image/*" class="fc" onchange="shotPick(this,'gUid','gIgn','gShotMsg')"><p class="lgnote" id="gShotMsg" style="margin:6px 0 0">Open Free Fire, go to your Profile and take a screenshot that shows your <b>ID (UID)</b> and name. We read the UID and name from the picture and fill them in for you.</p></div>
     <div class="fg"><label>In-Game Name (IGN)</label><input id="gIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in Free Fire"></div>
     <div class="fg"><label>Free Fire UID</label><input id="gUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
     <p class="lgnote" style="margin:0 0 6px">Check your IGN and UID carefully. After saving, you can change them <b>only after 3 days</b>.</p>
@@ -110,7 +114,8 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 <div class="pcnote">🚫 PC players are not allowed</div>
 
 <section class="view on" id="vHome">
-  <div class="auth out-only"><h2>Browse matches, sign in to play</h2><p>Sign in to join matches and use your wallet. New players get 25 free coins.</p>
+  <div class="auth out-only"><h2>Browse matches, sign in to play</h2><p>Sign in to join matches and use your wallet. New players get 25 bonus coins to try tournaments (bonus coins cannot be withdrawn or used in Game rooms).</p>
+    <p class="lgnote">🔞 18+ only. By continuing you accept our <a href="terms.html">Terms</a>, <a href="terms.html#refund">Refund Policy</a> and <a href="privacy.html">Privacy Policy</a>.</p>
     <button class="gbtn" onclick="loginWithGoogle()">Continue with Google</button>
     <div class="or">OR LOGIN WITH PASSWORD</div>
     <form class="lgform" onsubmit="pwLogin(event)">
@@ -123,7 +128,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="auth in-only"><div class="bal"><small>Wallet balance</small><h2><span id="coins">0</span> Coins</h2></div></div>
   <div class="card in-only"><h3>My Rooms</h3><p>Room ID and password of the matches you joined.</p><div id="roomList"></div><button class="gbtn" style="margin-top:10px" onclick="loadRooms()">Refresh</button></div>
   <div class="card in-only" id="refCard"><h3>🎁 Invite Friends</h3>
-    <p>Share your personal link with friends. When a new friend signs in with your link and plays a match, you get coins. Coins are guaranteed, and how many you get depends on your luck 🍀</p>
+    <p>Share your personal link with friends. When a new friend signs in with your link, adds coins (first deposit) and plays a match, you get coins. Coins are guaranteed, and how many you get depends on your luck 🍀</p>
     <input id="refLink" class="fc" readonly style="margin-top:12px" placeholder="Loading your link...">
     <div class="conn"><button onclick="copyRef()"><span>📋</span>Copy link</button><button onclick="shareRef()"><span>📤</span>Share link</button></div>
     <p id="refStat" style="margin-top:10px"></p></div>
@@ -142,6 +147,14 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 <section class="view" id="vWallet">
   <button class="back" onclick="show('vHome')">← Back</button>
   <div class="auth"><div class="bal"><small>Wallet balance</small><h2><span id="coins2">0</span> Coins</h2><small>Minimum withdrawal: 100 coins.</small></div></div>
+  <div class="card"><h3>Your wallet details</h3>
+    <div class="row2"><span>Withdrawable coins</span><b style="color:var(--g)" id="wdOk">-</b></div>
+    <div class="row2"><span>Bonus coins (locked)</span><b style="color:#fff" id="wdBonus">-</b></div>
+    <div class="row2"><span>Game Profile (UID)</span><b style="color:#fff" id="wdUid">-</b></div>
+    <p class="lgnote" id="wdNote" style="margin-bottom:10px"></p>
+    <button class="gbtn" id="uidVerBtn" style="display:none;margin-top:6px" onclick="$('wShot').click()">Verify my UID (upload screenshot)</button>
+    <input type="file" id="wShot" accept="image/*" style="display:none" onchange="walletShot(this)"><p class="lgnote" id="wShotMsg" style="margin:8px 0 0"></p>
+    <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="openSupport('Hi RRR Tournament support, I need help.')">💬 Contact support</button></div>
   <div class="card"><h3>Add Coins</h3>
     <p style="margin-bottom:10px">Tap the Add Coins button below to see the e-Sewa QR and pay (minimum 25 NPR), then enter the Reference ID. Coins are added to your wallet within 6-8 hours.</p>
     <button class="gbtn" type="button" id="qrBtn" onclick="toggleQR()" style="margin:0 0 12px">Add Coins</button>
@@ -161,8 +174,15 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 <section class="view" id="vWinners">
   <button class="back" onclick="show('vHome')">← Back</button>
   <h2 class="stitle">Winners</h2>
-  <div class="seg"><button id="wtSolo" class="on" onclick="setWin('Solo')">Solo</button><button id="wtDuo" onclick="setWin('Duo')">Duo</button><button id="wtSquad" onclick="setWin('Squad')">Squad</button></div>
+  <div class="seg"><button id="wvRes" class="on" onclick="setWinView('res')">Results</button><button id="wvLb" onclick="setWinView('lb')">🏅 Leaderboard</button></div>
+  <div id="lbWrap" style="display:none">
+    <div class="seg"><button id="lbW" class="on" onclick="setLb('weekly')">This week</button><button id="lbA" onclick="setLb('all')">All time</button></div>
+    <div id="lbBox"></div>
+  </div>
+  <div id="resWrap">
+  <div class="seg"><button id="wtSolo" class="on" onclick="setWin('Solo')">Solo</button><button id="wtDuo" onclick="setWin('Duo')">Duo</button><button id="wtSquad" onclick="setWin('Squad')">Squad</button><button id="wtCS" onclick="setWin('CS')">CS</button></div>
   <div id="winBox"></div>
+  </div>
 </section>
 
 <section class="view" id="vAccount">
@@ -179,7 +199,8 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <p class="lgnote">Forgot your password? Logout, continue with Google, then set a new one here. Changing the password logs you out on all other devices.</p></div>
   <div class="card"><h3>My History</h3><p>Your matches, payments and withdrawals.</p><button class="gbtn" onclick="openHistory()">View History</button></div>
   <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
-  <div class="card"><p><a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p></div>
+  <div class="card"><p><a href="terms.html" style="color:var(--g)">Terms &amp; Conditions</a> &nbsp;•&nbsp; <a href="terms.html#refund" style="color:var(--g)">Refund &amp; Withdrawal Policy</a> &nbsp;•&nbsp; <a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p>
+    <button class="gbtn" style="margin-top:12px" onclick="openSupport('Hi RRR Tournament support, I need help.')">💬 Contact support</button></div>
 </section>
 <section class="view" id="vHistory">
   <button class="back" onclick="show('vAccount')">← Back</button>
@@ -187,7 +208,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="seg"><button id="htm" class="on" onclick="setHist('m')">Matches</button><button id="htp" onclick="setHist('p')">Payments</button><button id="htw" onclick="setHist('w')">Withdrawals</button></div>
   <div id="histBox"></div>
 </section>
-<footer>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
+<footer>🔞 18+ only • Play responsibly<br><a href="terms.html">Terms</a> • <a href="terms.html#refund">Refund Policy</a> • <a href="privacy.html">Privacy</a> • <a href="#" onclick="openSupport('Hi RRR Tournament support, I need help.');return false">Support</a><br>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
 </div>
 
 <div class="tabbar">
@@ -302,7 +323,7 @@ function saveGate(e) {
   guarded($('gBtn'), async () => {
     const gi = $('gIgn').value.trim(), gu = $('gUid').value.trim();
     if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nYou cannot change these for 3 days after saving. Is this correct?')) return;
-    const d = await api('gameProfileSave', {ign: gi, uid: gu});
+    const d = await api('gameProfileSave', {ign: gi, uid: gu, scanId: SHOT.id}); if (shotHandle(d, 'gUid', 'gIgn')) return;
     if (d.status === 'SUCCESS') { PROF = Object.assign({}, d.profile, {loaded:true}); if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; const nx = profNext; profNext = null; if (nx) nx(); }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
   });
@@ -334,7 +355,7 @@ function share() {
   else navigator.clipboard.writeText(u).then(() => alert('Link copied!'));
 }
 function renderConn() {
-  const L = {messenger:['💬','Messenger'], tiktok:['🎵','TikTok'], whatsapp:['🟢','WhatsApp'], facebook:['📘','Facebook'], telegram:['✈️','Telegram']};
+  const L = {messenger:['💬','Messenger'], tiktok:['🎵','TikTok'], whatsapp:['🟢','WhatsApp'], facebook:['📘','Facebook'], telegram:['✈️','Telegram'], youtube:['▶️','YouTube'], instagram:['📸','Instagram'], discord:['🎧','Discord']};
   $('conn').innerHTML = '<button onclick="share()"><span>📤</span>Share</button>' + Object.keys(L).filter(k => SOC[k]).map(k =>
     `<button onclick="window.open('${esc(SOC[k])}','_blank')"><span>${L[k][0]}</span>${L[k][1]}</button>`).join('');
 }
@@ -358,7 +379,7 @@ function rows(list) {
     const n = COUNTS[m.name] || 0, full = n >= m.max, md = MODES[key(m)];
     return `<div class="rc ${full ? 'full' : ''}" ${full ? '' : `onclick="openMatch('${m.id}')"`}>
       <div class="rt"><span class="chip">ENTRY ${m.fee} COINS</span><span class="st ${full ? 'f' : 'o'}">${full ? 'FULL' : 'OPEN'}</span></div>
-      <div class="rm"><div><h4>${esc(m.name)}</h4><small>${md.t} • ${m.time ? 'Starts ' + esc(m.time) : 'Time soon'}</small></div>
+      <div class="rm"><div><h4>${esc(m.name)}</h4><small>${md.t} • ${m.time ? 'Starts ' + esc(m.time) : 'Time soon'}<span class="cd" data-t="${esc(m.time || '')}"></span></small></div>
         <div class="pz"><b>${esc(m.prize)} Coins</b><small>${n}/${m.max} ${m.type === 'CS' ? 'teams' : 'joined'}</small></div></div>
       <div class="rb"><div class="pbar"><i style="width:${Math.min(100, n / m.max * 100)}%"></i></div><span>›</span></div></div>`;
   }).join('');
@@ -437,7 +458,7 @@ async function loadWinners() {
   try { WIN = await (await fetch(WEB_APP_URL + '?action=getWinners')).json(); renderWinners(); }
   catch (e) { $('winBox').innerHTML = '<p class="empty">Could not load winners.</p>'; }
 }
-function setWin(m) { wMode = m; ['Solo', 'Duo', 'Squad'].forEach(k => $('wt' + k).classList.toggle('on', k === m)); renderWinners(); }
+function setWin(m) { wMode = m; ['Solo', 'Duo', 'Squad', 'CS'].forEach(k => $('wt' + k).classList.toggle('on', k === m)); renderWinners(); }
 function renderWinners() {
   const g = {};
   WIN.filter(x => x.mode === wMode).forEach(x => (g[x.match + '|' + x.day] = g[x.match + '|' + x.day] || []).push(x));
@@ -537,4 +558,123 @@ renderConn(); loadConfig();
 if (token) enter();
 </script>
 <script src="games.js"></script>
+<script>
+/* ---------- V5 additions: new messages, support, wallet details, leaderboard, countdown, installable app ---------- */
+Object.assign(MSG, {
+  BONUS_LOCKED: 'Your free signup bonus cannot be withdrawn. You can withdraw only coins you added or won (see "Withdrawable coins" in Wallet).',
+  UID_UNVERIFIED: 'To withdraw, your Free Fire UID must be verified once. Open Wallet and tap "Verify my UID" to upload your Free Fire profile screenshot.',
+  SHOT_REQUIRED: 'Please upload a screenshot of your Free Fire profile first (it must show your ID).',
+  SHOT_MISMATCH: 'The UID you typed is not in your screenshot.',
+  BAD_IMAGE: 'This image could not be used. Try another screenshot (JPG or PNG).',
+  SCAN_LIMIT: 'You uploaded too many screenshots today. Please try again tomorrow.',
+  BONUS_GAME: 'Bonus coins cannot be used in Game rooms. Add coins or win prizes in tournaments to play paid game rooms.',
+  BAD_AMOUNT: 'Enter a valid amount (up to 20000 NPR).',
+  RATE_LIMIT: 'Too many requests. Please wait a minute and try again.'
+});
+function openSupport(text) {
+  const msg = text + (userEmail ? '\nMy email: ' + userEmail : '');
+  const dc = SOC.discord;
+  if (dc) { try { navigator.clipboard.writeText(msg); } catch (e) {} alert('Your message was copied. In our Discord server open the support channel (or create a ticket) and paste it.'); window.open(dc, '_blank'); return; }
+  const wa = SOC.whatsapp;
+  if (wa) { window.open(wa + (wa.indexOf('?') < 0 && /wa\.me|whatsapp/.test(wa) ? '?text=' + encodeURIComponent(msg) : ''), '_blank'); return; }
+  const other = SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || SOC.discord;
+  if (other) { try { navigator.clipboard.writeText(msg); } catch (e) {} alert('Your message was copied. Paste it in the chat that opens.'); window.open(other, '_blank'); return; }
+  alert('Support link is not set yet. Please try again later.');
+}
+async function loadWalletInfo() {
+  if (!token) return;
+  try {
+    const d = await api('walletInfo'); if (d.status !== 'SUCCESS') return;
+    const r2 = x => Math.round(Number(x) * 100) / 100;
+    $('wdOk').innerText = r2(d.withdrawable) + ' coins'; $('wdBonus').innerText = r2(d.bonus) + ' coins';
+    $('wdUid').innerText = d.uidVerified ? '✅ Verified' : d.uidState === 'review' ? '🔎 Under admin review' : '⏳ Not verified'; $('uidVerBtn').style.display = (d.uidVerified || d.uidState === 'review') ? 'none' : 'block';
+    $('wdNote').innerText = 'Bonus coins can be used in tournaments, but cannot be withdrawn or used in Game rooms. Coins you add and prizes you win are withdrawable. Your first withdrawal needs a verified Game Profile (one-time).';
+  } catch (e) {}
+}
+let SHOT = {id: '', uid: '', ign: ''};
+function shotReset() { SHOT = {id: '', uid: '', ign: ''}; ['gShot', 'pfShot'].forEach(i => { const e = $(i); if (e) e.value = ''; }); ['gShotMsg', 'pfShotMsg'].forEach(i => { const e = $(i); if (e) e.innerText = ''; }); }
+function shotCompress(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onerror = () => rej(new Error('read'));
+    fr.onload = () => {
+      const img = new Image(); img.onerror = () => rej(new Error('img'));
+      img.onload = () => {
+        const k = Math.min(1, 1400 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k), c = document.createElement('canvas');
+        c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function shotRead(file) { return api('uidScan', {image: await shotCompress(file)}); }
+async function shotPick(inp, uidId, ignId, msgId) {
+  const f = inp.files && inp.files[0], msg = $(msgId); if (!f) return;
+  SHOT = {id: '', uid: '', ign: ''}; msg.innerText = '⏳ Reading your screenshot... please wait a few seconds.';
+  try {
+    const d = await shotRead(f);
+    if (d.status !== 'SUCCESS') { msg.innerText = '❌ ' + (MSG[d.status] || d.status); return; }
+    SHOT = {id: d.scanId, uid: d.uid || '', ign: d.ign || ''};
+    if (!d.ocr) { msg.innerText = '📸 Screenshot saved. Automatic reading is not available right now, so type your UID and IGN yourself. The admin will check them.'; return; }
+    if (d.uid) $(uidId).value = d.uid;
+    if (d.ign && !$(ignId).value.trim()) $(ignId).value = d.ign;
+    msg.innerText = d.uid ? '✅ UID ' + d.uid + (d.ign ? ' and name "' + d.ign + '"' : '') + ' were read from your screenshot and filled in. Please check them.' : '⚠️ Could not read a UID from this picture. Use a clear screenshot of your Free Fire profile that shows your ID, or type it yourself.';
+  } catch (e) { msg.innerText = '❌ Could not read this image. Try another screenshot.'; }
+}
+function shotHandle(d, uidId, ignId) {
+  if (d.status === 'SUCCESS') { shotReset(); return false; }
+  if (d.status === 'SHOT_MISMATCH') {
+    if (d.uid) $(uidId).value = d.uid;
+    if (d.ign && !$(ignId).value.trim()) $(ignId).value = d.ign;
+    alert('❌ The UID you typed is not in your screenshot.' + (d.uid ? '\n\nWe filled in the UID from the picture: ' + d.uid + '\nPlease check it and tap Save again.' : '\n\nUpload a clearer screenshot or correct the UID.'));
+    return true;
+  }
+  if (d.status === 'SHOT_REQUIRED') { alert('📸 ' + MSG.SHOT_REQUIRED); return true; }
+  return false;
+}
+async function walletShot(inp) {
+  const f = inp.files && inp.files[0], msg = $('wShotMsg'); if (!f) return;
+  if (!PROF.loaded) await checkProfile();
+  if (!profOk()) { inp.value = ''; return needProfile(() => $('wShot').click()); }
+  msg.innerText = '⏳ Reading your screenshot...';
+  try {
+    const d = await shotRead(f);
+    if (d.status !== 'SUCCESS') { msg.innerText = '❌ ' + (MSG[d.status] || d.status); inp.value = ''; return; }
+    const v = await api('uidVerifyShot', {scanId: d.scanId});
+    if (v.status === 'SUCCESS') { msg.innerText = v.state === 'auto' ? '✅ Verified!' : '🔎 Screenshot received. The admin will check it soon.'; loadWalletInfo(); }
+    else if (v.status === 'SHOT_MISMATCH') msg.innerText = '❌ The UID in this picture (' + (v.uid || '?') + ') is not your saved UID (' + PROF.uid + '). Use the screenshot of the account you registered.';
+    else msg.innerText = '❌ ' + (MSG[v.status] || v.status);
+  } catch (e) { msg.innerText = '❌ Could not read this image.'; }
+  inp.value = '';
+}
+{ const o = openWallet; openWallet = function () { o(); if (token) loadWalletInfo(); }; }
+
+let LB = null, lbMode = 'weekly';
+function setWinView(v) {
+  $('wvRes').classList.toggle('on', v === 'res'); $('wvLb').classList.toggle('on', v === 'lb');
+  $('resWrap').style.display = v === 'res' ? 'block' : 'none'; $('lbWrap').style.display = v === 'lb' ? 'block' : 'none';
+  if (v === 'lb') loadLeaderboard();
+}
+async function loadLeaderboard() {
+  $('lbBox').innerHTML = '<p class="empty">Loading...</p>';
+  try { LB = await (await fetch(WEB_APP_URL + '?action=getLeaderboard')).json(); renderLb(); } catch (e) { $('lbBox').innerHTML = '<p class="empty">Could not load the leaderboard.</p>'; }
+}
+function setLb(m) { lbMode = m; $('lbW').classList.toggle('on', m === 'weekly'); $('lbA').classList.toggle('on', m === 'all'); renderLb(); }
+function renderLb() {
+  const l = (LB && LB[lbMode]) || [];
+  $('lbBox').innerHTML = l.length ? '<div class="card">' + l.map((x, i) => `<div class="row2"><span>${['🥇', '🥈', '🥉'][i] || '#' + (i + 1)} &nbsp;<b style="color:#fff">${esc(x.ign)}</b> <small>(${x.wins} win${x.wins === 1 ? '' : 's'})</small></span><b style="color:var(--g)">${x.coins} Coins</b></div>`).join('') + '</div>' : '<p class="empty">No winners yet. Be the first!</p>';
+}
+
+function cdText(t) {
+  const m = /(\d{1,2}):(\d{2})\s*([AaPp][Mm])?/.exec(t || ''); if (!m) return '';
+  let h = +m[1]; const ap = (m[3] || '').toUpperCase(); if (ap === 'PM' && h < 12) h += 12; if (ap === 'AM' && h === 12) h = 0;
+  const now = new Date(), s = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, +m[2], 0), d = Math.round((s - now) / 1000);
+  if (d > 0) { const hh = Math.floor(d / 3600), mm = Math.floor(d % 3600 / 60), ss = d % 60; return '⏳ ' + (hh ? hh + 'h ' : '') + mm + 'm' + (hh ? '' : ' ' + ss + 's') + ' left'; }
+  return d > -1800 ? '🔴 Started' : '';
+}
+setInterval(() => document.querySelectorAll('.cd').forEach(el => { el.textContent = cdText(el.dataset.t); }), 1000);
+
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
 </body></html>

@@ -593,25 +593,38 @@ async function loadWalletInfo() {
 }
 let SHOT = {id: '', uid: '', ign: ''};
 function shotReset() { SHOT = {id: '', uid: '', ign: ''}; ['gShot', 'pfShot'].forEach(i => { const e = $(i); if (e) e.value = ''; }); ['gShotMsg', 'pfShotMsg'].forEach(i => { const e = $(i); if (e) e.innerText = ''; }); }
-function shotCompress(file) {
+function shotLoad(file) {
   return new Promise((res, rej) => {
     const fr = new FileReader(); fr.onerror = () => rej(new Error('read'));
-    fr.onload = () => {
-      const img = new Image(); img.onerror = () => rej(new Error('img'));
-      img.onload = () => {
-        const k = Math.min(1, 1400 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k), c = document.createElement('canvas');
-        c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
-        res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
-      };
-      img.src = fr.result;
-    };
+    fr.onload = () => { const img = new Image(); img.onerror = () => rej(new Error('img')); img.onload = () => res(img); img.src = fr.result; };
     fr.readAsDataURL(file);
   });
 }
-async function shotRead(file) { return api('uidScan', {image: await shotCompress(file)}); }
+function shotFull(img) {   // the whole screenshot, at most 1400 px wide (kept as proof)
+  const k = Math.min(1, 1400 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k), c = document.createElement('canvas');
+  c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.8).split(',')[1];
+}
+function shotCrops(img) {   // the name + UID area of the Free Fire profile card, enlarged (and a high-contrast copy) so the digits are read correctly
+  const W = img.width, H = img.height; if (W < H) return {};
+  const regs = [[0.58, 0.165, 0.98, 0.285], [0.58, 0.285, 0.99, 0.39]], OW = 1500, gap = 24;
+  const parts = regs.map(r => { const sx = W * r[0], sy = H * r[1], sw = W * (r[2] - r[0]), sh = H * (r[3] - r[1]); return {sx, sy, sw, sh, h: Math.round(sh * OW / sw)}; });
+  const total = parts.reduce((a, p) => a + p.h + gap, 0), c = document.createElement('canvas'); c.width = OW; c.height = total;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, OW, total);
+  let y = 0; parts.forEach(p => { x.drawImage(img, p.sx, p.sy, p.sw, p.sh, 0, y, OW, p.h); y += p.h + gap; });
+  const crop1 = c.toDataURL('image/jpeg', 0.9).split(',')[1];
+  const d = x.getImageData(0, 0, OW, total), a = d.data, hist = new Array(256).fill(0); let n = 0;
+  for (let i = 0; i < a.length; i += 4) { const g = (a[i] * 0.3 + a[i + 1] * 0.59 + a[i + 2] * 0.11) | 0; a[i] = g; hist[g]++; n++; }
+  let lo = 0, hi = 255, s = 0; while (lo < 255 && s + hist[lo] < n * 0.02) s += hist[lo++]; s = 0; while (hi > 0 && s + hist[hi] < n * 0.02) s += hist[hi--];
+  const k = hi > lo ? 255 / (hi - lo) : 1;
+  for (let i = 0; i < a.length; i += 4) { const g = Math.max(0, Math.min(255, (a[i] - lo) * k)) | 0; a[i] = a[i + 1] = a[i + 2] = g; }
+  x.putImageData(d, 0, 0);
+  return {crop1, crop2: c.toDataURL('image/jpeg', 0.9).split(',')[1]};
+}
+async function shotRead(file) { const img = await shotLoad(file); return api('uidScan', Object.assign({image: shotFull(img)}, shotCrops(img))); }
 async function shotPick(inp, uidId, ignId, msgId) {
   const f = inp.files && inp.files[0], msg = $(msgId); if (!f) return;
-  SHOT = {id: '', uid: '', ign: ''}; msg.innerText = '⏳ Reading your screenshot... please wait a few seconds.';
+  SHOT = {id: '', uid: '', ign: ''}; msg.innerText = '⏳ Reading your screenshot... this can take up to 20 seconds.';
   try {
     const d = await shotRead(f);
     if (d.status !== 'SUCCESS') { msg.innerText = '❌ ' + (MSG[d.status] || d.status); return; }
@@ -619,7 +632,8 @@ async function shotPick(inp, uidId, ignId, msgId) {
     if (!d.ocr) { msg.innerText = '📸 Screenshot saved. Automatic reading is not available right now, so type your UID and IGN yourself. The admin will check them.'; return; }
     if (d.uid) $(uidId).value = d.uid;
     if (d.ign && !$(ignId).value.trim()) $(ignId).value = d.ign;
-    msg.innerText = d.uid ? '✅ UID ' + d.uid + (d.ign ? ' and name "' + d.ign + '"' : '') + ' were read from your screenshot and filled in. Please check them.' : '⚠️ Could not read a UID from this picture. Use a clear screenshot of your Free Fire profile that shows your ID, or type it yourself.';
+    const alt = (d.uids || []).filter(u => u !== d.uid).slice(0, 2);
+    msg.innerHTML = d.uid ? '✅ UID <b>' + esc(d.uid) + '</b>' + (d.ign ? ' and name <b>' + esc(d.ign) + '</b>' : '') + ' were read from your screenshot and filled in. <b>Check every digit</b> against your Free Fire screen and correct them if needed.' + (alt.length ? ' Other numbers seen: ' + alt.map(u => '<a href="#" onclick="$(\'' + uidId + '\').value=\'' + u + '\';return false">' + u + '</a>').join(', ') : '') : '⚠️ Could not read a UID from this picture. Use a clear screenshot of your Free Fire profile that shows your ID, or type it yourself.';
   } catch (e) { msg.innerText = '❌ Could not read this image. Try another screenshot.'; }
 }
 function shotHandle(d, uidId, ignId) {

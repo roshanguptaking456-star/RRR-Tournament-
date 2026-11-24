@@ -6,7 +6,7 @@ const APP_CONFIG = {
   // SUPPORT + SOCIAL LINKS. Put your full link between the quotes. Leave "" to hide a button.
   // discord = your Discord server INVITE link (example: "https://discord.gg/abcdEFG"). All support buttons use it first.
   social: {
-    discord:   "",
+    discord:   "https://discord.gg/BVPK5nhWZQ",
     facebook:  "",
     tiktok:    "",
     youtube:   "",

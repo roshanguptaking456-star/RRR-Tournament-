@@ -93,7 +93,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 <body>
 <div class="gate" id="profGate"><div class="modal-c">
   <h2 style="margin-bottom:6px">🎮 Complete your Game Profile</h2>
-  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join a match or a game room. One Free Fire UID can be used on only one account.</p>
+  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">This is required before you can join a Free Fire match. Mini games do not need it. One Free Fire UID can be used on only one account.</p>
   <form onsubmit="saveGate(event)">
     <div class="fg"><label>📸 Free Fire profile screenshot <small style="color:var(--mut)">(required)</small></label><input type="file" id="gShot" accept="image/*" class="fc" onchange="shotPick(this,'gUid','gIgn','gShotMsg')"><p class="lgnote" id="gShotMsg" style="margin:6px 0 0">Open Free Fire, go to your Profile and take a screenshot that shows your <b>ID (UID)</b> and name. We read the UID and name from the picture and fill them in for you.</p></div>
     <div class="fg"><label>In-Game Name (IGN)</label><input id="gIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in Free Fire"></div>
@@ -154,7 +154,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <p class="lgnote" id="wdNote" style="margin-bottom:10px"></p>
     <button class="gbtn" id="uidVerBtn" style="display:none;margin-top:6px" onclick="$('wShot').click()">Verify my UID (upload screenshot)</button>
     <input type="file" id="wShot" accept="image/*" style="display:none" onchange="walletShot(this)"><p class="lgnote" id="wShotMsg" style="margin:8px 0 0"></p>
-    <button class="gbtn" style="background:#1c2438;color:#fff;margin-top:10px" onclick="openSupport('Hi RRR Tournament support, I need help.')">💬 Contact support</button></div>
+    <a class="gbtn" data-support="Hi RRR Tournament support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
   <div class="card"><h3>Add Coins</h3>
     <p style="margin-bottom:10px">Tap the Add Coins button below to see the e-Sewa QR and pay (minimum 25 NPR), then enter the Reference ID. Coins are added to your wallet within 6-8 hours.</p>
     <button class="gbtn" type="button" id="qrBtn" onclick="toggleQR()" style="margin:0 0 12px">Add Coins</button>
@@ -200,7 +200,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="card"><h3>My History</h3><p>Your matches, payments and withdrawals.</p><button class="gbtn" onclick="openHistory()">View History</button></div>
   <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
   <div class="card"><p><a href="terms.html" style="color:var(--g)">Terms &amp; Conditions</a> &nbsp;•&nbsp; <a href="terms.html#refund" style="color:var(--g)">Refund &amp; Withdrawal Policy</a> &nbsp;•&nbsp; <a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p>
-    <button class="gbtn" style="margin-top:12px" onclick="openSupport('Hi RRR Tournament support, I need help.')">💬 Contact support</button></div>
+    <a class="gbtn" data-support="Hi RRR Tournament support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
 </section>
 <section class="view" id="vHistory">
   <button class="back" onclick="show('vAccount')">← Back</button>
@@ -208,7 +208,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="seg"><button id="htm" class="on" onclick="setHist('m')">Matches</button><button id="htp" onclick="setHist('p')">Payments</button><button id="htw" onclick="setHist('w')">Withdrawals</button></div>
   <div id="histBox"></div>
 </section>
-<footer>🔞 18+ only • Play responsibly<br><a href="terms.html">Terms</a> • <a href="terms.html#refund">Refund Policy</a> • <a href="privacy.html">Privacy</a> • <a href="#" onclick="openSupport('Hi RRR Tournament support, I need help.');return false">Support</a><br>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
+<footer>🔞 18+ only • Play responsibly<br><a href="terms.html">Terms</a> • <a href="terms.html#refund">Refund Policy</a> • <a href="privacy.html">Privacy</a> • <a href="#" data-support="Hi RRR Tournament support, I need help.">Support</a><br>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
 </div>
 
 <div class="tabbar">
@@ -569,18 +569,35 @@ Object.assign(MSG, {
   SCAN_LIMIT: 'You uploaded too many screenshots today. Please try again tomorrow.',
   BONUS_GAME: 'Bonus coins cannot be used in Game rooms. Add coins or win prizes in tournaments to play paid game rooms.',
   BAD_AMOUNT: 'Enter a valid amount (up to 20000 NPR).',
-  RATE_LIMIT: 'Too many requests. Please wait a minute and try again.'
+  RATE_LIMIT: 'Too many requests. Please wait a minute and try again.',
+  GAMES_BANNED: 'You are banned from the mini games.',
+  UID_BANNED: 'This Free Fire UID is banned and cannot be used.',
+  ESEWA_BANNED: 'This e-Sewa ID is banned, so withdrawals to it are blocked. Please contact support.'
 });
-function openSupport(text) {
-  const msg = text + (userEmail ? '\nMy email: ' + userEmail : '');
-  const dc = SOC.discord;
-  if (dc) { try { navigator.clipboard.writeText(msg); } catch (e) {} alert('Your message was copied. In our Discord server open the support channel (or create a ticket) and paste it.'); window.open(dc, '_blank'); return; }
-  const wa = SOC.whatsapp;
-  if (wa) { window.open(wa + (wa.indexOf('?') < 0 && /wa\.me|whatsapp/.test(wa) ? '?text=' + encodeURIComponent(msg) : ''), '_blank'); return; }
-  const other = SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || SOC.discord;
-  if (other) { try { navigator.clipboard.writeText(msg); } catch (e) {} alert('Your message was copied. Paste it in the chat that opens.'); window.open(other, '_blank'); return; }
-  alert('Support link is not set yet. Please try again later.');
+function toast(t) {
+  let e = $('toastBox');
+  if (!e) { e = document.createElement('div'); e.id = 'toastBox'; e.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);max-width:88%;background:#1c2438;color:#fff;border:1px solid #ffb400;border-radius:12px;padding:12px 16px;font-size:14px;z-index:9999;display:none;text-align:center'; document.body.appendChild(e); }
+  e.innerText = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(() => { e.style.display = 'none'; }, 7000);
 }
+function supportUrl(text) {
+  if (SOC.discord) return SOC.discord;
+  if (SOC.whatsapp) return SOC.whatsapp + (SOC.whatsapp.indexOf('?') < 0 && /wa\.me|whatsapp/.test(SOC.whatsapp) ? '?text=' + encodeURIComponent(text + (userEmail ? '\nMy email: ' + userEmail : '')) : '');
+  return SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || '';
+}
+function copySupportMsg(text) {
+  try { navigator.clipboard.writeText(text + (userEmail ? '\nMy email: ' + userEmail : '')); } catch (e) {}
+  toast(SOC.discord ? '📋 Your message is copied. In Discord open #support (or a ticket) and paste it.' : '📋 Your message is copied. Paste it in the chat that opens.');
+}
+function wireSupport() {   // support buttons are real links (target=_blank), so the browser never blocks them as a popup
+  document.querySelectorAll('[data-support]').forEach(a => {
+    if (a._w) return; a._w = 1;
+    const u = supportUrl(a.dataset.support);
+    if (u) { a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.addEventListener('click', () => copySupportMsg(a.dataset.support)); }
+    else { a.href = '#'; a.addEventListener('click', ev => { ev.preventDefault(); toast('Support link is not set yet.'); }); }
+  });
+}
+function openSupport(text) { const u = supportUrl(text); if (!u) return toast('Support link is not set yet.'); copySupportMsg(text); if (!window.open(u, '_blank')) location.href = u; }
+wireSupport();
 async function loadWalletInfo() {
   if (!token) return;
   try {
@@ -600,18 +617,47 @@ function shotLoad(file) {
     fr.readAsDataURL(file);
   });
 }
-function shotFull(img) {   // the whole screenshot, at most 1400 px wide (kept as proof)
-  const k = Math.min(1, 1400 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k), c = document.createElement('canvas');
+function shotFull(img) {   // the whole screenshot, small (kept only as proof)
+  const k = Math.min(1, 1000 / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k), c = document.createElement('canvas');
   c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
-  return c.toDataURL('image/jpeg', 0.8).split(',')[1];
+  return c.toDataURL('image/jpeg', 0.7).split(',')[1];
 }
-function shotCrops(img) {   // the name + UID area of the Free Fire profile card, enlarged (and a high-contrast copy) so the digits are read correctly
+function shotFindPanel(d, w, h) {   // d = RGBA pixels of a small copy of the screenshot (w x h). Finds the light-grey name panel of the profile card.
+  const n = w * h, mask = new Uint8Array(n), lab = new Int32Array(n), stack = new Int32Array(n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) { const mn = Math.min(d[p], d[p + 1], d[p + 2]), mx = Math.max(d[p], d[p + 1], d[p + 2]); mask[i] = (mn >= 190 && mx - mn <= 18) ? 1 : 0; }
+  let best = null, id = 0;
+  for (let s = 0; s < n; s++) {
+    if (!mask[s] || lab[s]) continue;
+    id++; let sp = 0, minx = w, maxx = 0, miny = h, maxy = 0, area = 0; stack[sp++] = s; lab[s] = id;
+    while (sp) {
+      const q = stack[--sp], x = q % w, y = (q / w) | 0; area++;
+      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+      if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = id; stack[sp++] = q - 1; }
+      if (x < w - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = id; stack[sp++] = q + 1; }
+      if (y > 0 && mask[q - w] && !lab[q - w]) { lab[q - w] = id; stack[sp++] = q - w; }
+      if (y < h - 1 && mask[q + w] && !lab[q + w]) { lab[q + w] = id; stack[sp++] = q + w; }
+    }
+    const bw = maxx - minx + 1, bh = maxy - miny + 1;
+    if (bw / h < 0.25 || bw / h > 0.75 || bh / h < 0.06 || bh / h > 0.22 || bw / bh < 2 || bw / bh > 8 || maxy > h * 0.55 || area / (bw * bh) < 0.5) continue;
+    if (!best || area > best.area) best = {x0: minx, y0: miny, x1: maxx + 1, y1: maxy + 1, area};
+  }
+  return best;
+}
+function shotRegions(d, sw, sh, W, H) {   // [[x0,y0,x1,y1], ...] in pixels of the real screenshot: name area, then UID strip (or fixed guesses if the panel is not found)
+  const P = shotFindPanel(d, sw, sh), k = H / sh;
+  if (P) { const x0 = P.x0 * k, y0 = P.y0 * k, x1 = P.x1 * k, y1 = P.y1 * k; return [[x0 - 0.01 * H, y0 - 0.005 * H, x1, y1 + 0.005 * H], [x1 - 0.45 * H, y1 - 0.06 * H, x1 + 0.03 * H, y1 + 0.035 * H]]; }
+  return [[.58 * W, .165 * H, .98 * W, .285 * H], [.58 * W, .285 * H, .99 * W, .39 * H], [.35 * W, .165 * H, .66 * W, .285 * H], [.35 * W, .285 * H, .67 * W, .39 * H]];
+}
+
+function shotCrops(img) {   // finds the profile card in ANY Free Fire screenshot (laptop or phone) and cuts out only the name + UID area, enlarged (plus a high-contrast copy)
   const W = img.width, H = img.height; if (W < H) return {};
-  const regs = [[0.58, 0.165, 0.98, 0.285], [0.58, 0.285, 0.99, 0.39]], OW = 1500, gap = 24;
-  const parts = regs.map(r => { const sx = W * r[0], sy = H * r[1], sw = W * (r[2] - r[0]), sh = H * (r[3] - r[1]); return {sx, sy, sw, sh, h: Math.round(sh * OW / sw)}; });
-  const total = parts.reduce((a, p) => a + p.h + gap, 0), c = document.createElement('canvas'); c.width = OW; c.height = total;
-  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, OW, total);
-  let y = 0; parts.forEach(p => { x.drawImage(img, p.sx, p.sy, p.sw, p.sh, 0, y, OW, p.h); y += p.h + gap; });
+  const sh = 270, sw = Math.round(sh * W / H), sc = document.createElement('canvas'); sc.width = sw; sc.height = sh;
+  const sx = sc.getContext('2d', {willReadFrequently: true}); sx.drawImage(img, 0, 0, sw, sh);
+  const regs = shotRegions(sx.getImageData(0, 0, sw, sh).data, sw, sh, W, H), OW = 1500, gap = 24;
+  const parts = regs.map(r => { const x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(W, r[2]), y1 = Math.min(H, r[3]); return {sx: x0, sy: y0, sw: x1 - x0, sh: y1 - y0, h: Math.max(10, Math.round((y1 - y0) * OW / (x1 - x0)))}; });
+  const total = parts.reduce((a, q) => a + q.h + gap, 0), c = document.createElement('canvas'); c.width = OW; c.height = total;
+  const x = c.getContext('2d', {willReadFrequently: true}); x.fillStyle = '#fff'; x.fillRect(0, 0, OW, total);
+  let y = 0; parts.forEach(q => { x.drawImage(img, q.sx, q.sy, q.sw, q.sh, 0, y, OW, q.h); y += q.h + gap; });
   const crop1 = c.toDataURL('image/jpeg', 0.9).split(',')[1];
   const d = x.getImageData(0, 0, OW, total), a = d.data, hist = new Array(256).fill(0); let n = 0;
   for (let i = 0; i < a.length; i += 4) { const g = (a[i] * 0.3 + a[i + 1] * 0.59 + a[i + 2] * 0.11) | 0; a[i] = g; hist[g]++; n++; }
@@ -630,10 +676,14 @@ async function shotPick(inp, uidId, ignId, msgId) {
     if (d.status !== 'SUCCESS') { msg.innerText = '❌ ' + (MSG[d.status] || d.status); return; }
     SHOT = {id: d.scanId, uid: d.uid || '', ign: d.ign || ''};
     if (!d.ocr) { msg.innerText = '📸 Screenshot saved. Automatic reading is not available right now, so type your UID and IGN yourself. The admin will check them.'; return; }
+    const plain = /^[A-Za-z0-9 ._\-$@#]{3,20}$/.test(d.ign || ''), alt = (d.uids || []).filter(u => u !== d.uid).slice(0, 2);
     if (d.uid) $(uidId).value = d.uid;
-    if (d.ign && !$(ignId).value.trim()) $(ignId).value = d.ign;
-    const alt = (d.uids || []).filter(u => u !== d.uid).slice(0, 2);
-    msg.innerHTML = d.uid ? '✅ UID <b>' + esc(d.uid) + '</b>' + (d.ign ? ' and name <b>' + esc(d.ign) + '</b>' : '') + ' were read from your screenshot and filled in. <b>Check every digit</b> against your Free Fire screen and correct them if needed.' + (alt.length ? ' Other numbers seen: ' + alt.map(u => '<a href="#" onclick="$(\'' + uidId + '\').value=\'' + u + '\';return false">' + u + '</a>').join(', ') : '') : '⚠️ Could not read a UID from this picture. Use a clear screenshot of your Free Fire profile that shows your ID, or type it yourself.';
+    if (d.ign && plain && !$(ignId).value.trim()) $(ignId).value = d.ign;
+    msg.innerHTML = d.uid
+      ? '✅ UID <b>' + esc(d.uid) + '</b>' + (d.ign && plain ? ' and name <b>' + esc(d.ign) + '</b>' : '') + ' were read from your screenshot and filled in. <b>Check every digit</b> against your Free Fire screen and correct them if needed.'
+        + (d.ign && !plain ? ' Your name has special symbols that cannot be read fully (we saw "<b>' + esc(d.ign) + '</b>"). <b>Please type your name exactly as it is in the game.</b>' : '')
+        + (alt.length ? ' Other numbers seen: ' + alt.map(u => '<a href="#" onclick="$(\'' + uidId + '\').value=\'' + u + '\';return false">' + u + '</a>').join(', ') : '')
+      : '⚠️ Could not read a UID. Upload the full screenshot of your Free Fire Profile screen (it must show your UID under your name), or type the UID yourself.';
   } catch (e) { msg.innerText = '❌ Could not read this image. Try another screenshot.'; }
 }
 function shotHandle(d, uidId, ignId) {

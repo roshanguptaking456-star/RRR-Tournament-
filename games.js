@@ -353,7 +353,7 @@ const pool = (f, n) => Math.floor(f * n * (1 - CFG.commission) + 1e-9);
 const prizes = (f, n) => SPL[slots(n)].map(x => Math.floor(pool(f, n) * x + 1e-9));
 const lim = k => (CFG.games && CFG.games[k]) || {min:2, max:8};
 const ORD = ['1st', '2nd', '3rd'];
-const fail = d => '❌ ' + (MSG[d.status] || d.status) + (d.status === 'ERROR' && d.msg ? ' (' + d.msg + ')' : '');
+const fail = d => '❌ ' + (MSG[d.status] || d.status) + ((d.status === 'ERROR' || /BANNED$/.test(d.status)) && d.msg ? ' (' + d.msg + ')' : '');
 const mins = ms => Math.max(0, Math.ceil((ms - Date.now()) / 60000)) + ' min';
 /* ---------- helpers ---------- */
 function loop(fn) { let id, last = performance.now(), stop = false; const f = now => { if (stop) return; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt); id = requestAnimationFrame(f); }; id = requestAnimationFrame(f); return () => { stop = true; cancelAnimationFrame(id); }; }
@@ -646,11 +646,10 @@ function build() {
   <div class="fg"><label>Game</label><select id="gcGame" class="fc" onchange="RRRG.prev(true)"></select></div>
   <div class="fg"><label>Entry fee per player (coins)</label><input id="gcFee" type="number" class="fc" required oninput="RRRG.prev()"></div>
   <div class="fg"><label>Max players in the room</label><select id="gcMax" class="fc" onchange="RRRG.prev()"></select></div>
-  <div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="gcIgn" class="fc" required maxlength="40"></div>
   <div class="card" id="gcPrev" style="font-size:13px"></div>
   <button class="gbtn" id="gcBtn" type="submit">Create and pay entry fee</button></form></div></div>
 <div class="modal" id="gJoinModal"><div class="modal-c"><span class="x" onclick="closeModals()">&times;</span><div class="nbar"><button class="nbtn" onclick="closeModals()">← Back</button></div><h2 id="gjTitle" style="margin-bottom:6px"></h2><p id="gjInfo" style="margin-bottom:12px;font-size:13px"></p>
-  <form onsubmit="RRRG.doJoin(event)"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="gjIgn" class="fc" required maxlength="40"></div>
+  <form onsubmit="RRRG.doJoin(event)"><p style="font-size:13px;color:var(--mut)">Your Google first name and last initial are shown in the room. No Free Fire name or UID is needed.</p>
   <button class="gbtn" id="gjBtn" type="submit">Join and pay entry fee</button></form></div></div>`);
   NAVOF.vGames = NAVOF.vGameList = NAVOF.vGamePlay = 'nGames';
 }
@@ -716,12 +715,10 @@ function rules(k) {
 
 /* ---------- create / join ---------- */
 function create(k) {
-  if (token && !profOk()) return needProfile(() => create(k));
   if (!token) return needLogin();
   k = k || K || 'rail';
   $('gcGame').innerHTML = Object.keys(GM).map(x => `<option value="${x}">${GM[x].name}</option>`).join(''); $('gcGame').value = k;
   $('gcFee').min = CFG.minFee; $('gcFee').max = CFG.maxFee; $('gcFee').value = Math.max(CFG.minFee, 10);
-  $('gcIgn').value = PROFILE.ign || ''; if (!$('gcIgn').value) { try { $('gcIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {} }
   prev(true); $('gCreateModal').style.display = 'flex';
 }
 function prev(newGame) {
@@ -732,27 +729,25 @@ function prev(newGame) {
     : 'If the room fills (' + n + ' players): prize pool <b style="color:var(--g)">' + pool(f, n) + ' coins</b><br>' + prizes(f, n).map((p, i) => ORD[i] + ' place: <b style="color:#fff">' + p + ' coins</b>').join(' • ') + '<br><small>You pay ' + f + ' coins now. It is refunded if the room is cancelled.</small>';
 }
 function doCreate(e) {
-  e.preventDefault(); const ign = $('gcIgn').value.trim();
+  e.preventDefault();
   guarded($('gcBtn'), async () => {
-    const d = await api('gameCreate', {game: $('gcGame').value, fee: $('gcFee').value, max: $('gcMax').value, ign});
-    if (d.status === 'SUCCESS') { try { localStorage.setItem('rrr_game_ign', ign); } catch (x) {} setCoins(d.newBalance); closeModals(); K = $('gcGame').value; alert('✅ Room created! Share the game with friends so they can join.'); load(); list(K); }
+    const d = await api('gameCreate', {game: $('gcGame').value, fee: $('gcFee').value, max: $('gcMax').value});
+    if (d.status === 'SUCCESS') { setCoins(d.newBalance); closeModals(); K = $('gcGame').value; alert('✅ Room created! Share the game with friends so they can join.'); load(); list(K); }
     else if (d.status !== 'Banned') alert(fail(d));
   });
 }
 function join(id) {
-  if (token && !profOk()) return needProfile(() => join(id));
   if (!token) return needLogin();
   const m = OPEN.find(x => x.id === id); if (!m) return; joinId = id;
   $('gjTitle').innerText = GM[m.game].name + ' - ' + m.fee + ' coins';
   $('gjInfo').innerHTML = esc(m.by) + "'s room • " + m.n + '/' + m.max + ' players • prize if room fills: <b style="color:var(--g)">' + pool(m.fee, m.max) + ' coins</b>';
-  $('gjIgn').value = PROFILE.ign || ''; if (!$('gjIgn').value) { try { $('gjIgn').value = localStorage.getItem('rrr_game_ign') || ''; } catch (e) {} }
   $('gJoinModal').style.display = 'flex';
 }
 function doJoin(e) {
-  e.preventDefault(); const ign = $('gjIgn').value.trim();
+  e.preventDefault();
   guarded($('gjBtn'), async () => {
-    const d = await api('gameJoin', {matchId: joinId, ign});
-    if (d.status === 'SUCCESS') { try { localStorage.setItem('rrr_game_ign', ign); } catch (x) {} setCoins(d.newBalance); closeModals(); alert(d.live ? '🎉 Joined! The room is full and the match is LIVE. Go to Games > My Game Matches and tap Play now.' : '✅ Joined! Wait for the room to fill.'); load(); }
+    const d = await api('gameJoin', {matchId: joinId});
+    if (d.status === 'SUCCESS') { setCoins(d.newBalance); closeModals(); alert(d.live ? '🎉 Joined! The room is full and the match is LIVE. Go to Games > My Game Matches and tap Play now.' : '✅ Joined! Wait for the room to fill.'); load(); }
     else if (d.status !== 'Banned') { alert(fail(d)); load(); }
   });
 }
@@ -806,7 +801,7 @@ function fillProfile() {
   if (!$('pfIgn')) return;
   const lock = PROFILE.lockUntil && PROFILE.lockUntil > Date.now(), has = !!(PROFILE.ign && PROFILE.uid);
   $('pfIgn').value = PROFILE.ign || ''; $('pfUid').value = PROFILE.uid || ''; $('pfIgn').readOnly = !!lock; $('pfUid').readOnly = !!lock; $('pfBtn').disabled = !!lock;
-  $('pfNote').innerText = lock ? '🔒 You can change your IGN/UID after ' + new Date(PROFILE.lockUntil).toLocaleString() + '.' : has ? 'You can change your IGN/UID now. After saving a change you must wait 3 days before changing again.' : 'Required. Check your IGN and UID carefully, after saving you can change them only after 3 days.';
+  $('pfNote').innerText = lock ? '🔒 You can change your IGN/UID after ' + new Date(PROFILE.lockUntil).toLocaleString() + '.' : has ? 'You can change your IGN/UID now. After saving a change you must wait 3 days before changing again.' : 'Needed to join Free Fire tournaments (mini games do not need it). Check your IGN and UID carefully, after saving you can change them only after 3 days.';
   $('pfBtn').innerText = has ? 'Save changes' : 'Save';
 }
 async function loadProfile() { try { const d = await api('gameProfileGet'); if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); } } catch (e) {} }
@@ -818,7 +813,7 @@ function saveProfile(e) {
     const d = await api('gameProfileSave', {ign: gi, uid: gu, scanId: SHOT.id});
     if (shotHandle(d, 'pfUid', 'pfIgn')) return;
     if (d.status === 'PROFILE_WAIT') return alert('🔒 You can change your IGN/UID after ' + new Date(d.until).toLocaleString() + '.');
-    if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN and UID are filled automatically in matches and games.'); } else if (d.status !== 'Banned') alert(fail(d));
+    if (d.status === 'SUCCESS') { PROFILE = d.profile; fillProfile(); alert('✅ Saved. Your IGN and UID are filled automatically when you join Free Fire matches.'); } else if (d.status !== 'Banned') alert(fail(d));
   });
 }
 window.RRRG = {syncProfile: p => { PROFILE = p; fillProfile(); }, saveProfile, rules, list, free, play, go, create, prev, doCreate, join, doJoin, begin, cancel, leave, refresh: load, retry: send};
@@ -827,7 +822,7 @@ build();
 document.querySelector('.top .in-only').insertAdjacentHTML('beforebegin', '<span class="in-only balchip">🪙 <b id="topBal">' + $('coins').innerText + '</b></span>');
 { const o = setCoins; setCoins = c => { o(c); $('topBal').innerText = $('coins').innerText; }; }
 /* Game Profile card in Account */
-$('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Game Profile <small style="color:var(--mut);font-size:12px">(required)</small></h3><p id="pfNote">Required. Check your UID carefully, it cannot be changed later.</p>
+$('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class="card"><h3>🎮 Free Fire Profile <small style="color:var(--mut);font-size:12px">(for Free Fire tournaments)</small></h3><p id="pfNote">Required. Check your UID carefully, it cannot be changed later.</p>
   <form onsubmit="RRRG.saveProfile(event)" style="margin-top:10px"><div class="fg"><label>IGN <small style="color:var(--mut)">(In-Game Name)</small></label><input id="pfIgn" class="fc" required minlength="2" maxlength="40" placeholder="Your name in the game"></div>
   <div class="fg"><label>UID <small style="color:var(--mut)">(User ID)</small></label><input id="pfUid" class="fc" required inputmode="numeric" pattern="[0-9]{6,15}" placeholder="Numbers only"></div>
   <div class="fg"><label>📸 Free Fire profile screenshot <small style="color:var(--mut)">(needed when you set or change your UID)</small></label><input type="file" id="pfShot" accept="image/*" class="fc" onchange="shotPick(this,'pfUid','pfIgn','pfShotMsg')"><p class="lgnote" id="pfShotMsg" style="margin:6px 0 0"></p></div>

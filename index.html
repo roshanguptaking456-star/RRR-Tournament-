@@ -16,6 +16,23 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"RRR Tournament","alternateName":["RRR Tournament Nepal","RRR FF Tournament"],"url":"https://rrrfftournament.netlify.app/"}</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
+<script>
+(function () {
+  const BASE = APP_CONFIG.webAppUrl + '?action=', ACTS = ['getConfig', 'getSlots', 'getWinners', 'getRules', 'getLeaderboard', 'getGameMatches'], _f = window.fetch.bind(window);
+  window.fetch = function (url, opts) {
+    if (typeof url !== 'string' || opts || url.indexOf(BASE) !== 0) return _f(url, opts);
+    const act = url.slice(BASE.length).split('&')[0]; if (ACTS.indexOf(act) < 0) return _f(url, opts);
+    const key = 'rrr_c_' + act; let st = null; try { st = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+    const mk = txt => new Response(txt, {status: 200, headers: {'Content-Type': 'application/json'}});
+    const net = () => _f(url).then(r => r.text()).then(txt => { JSON.parse(txt); try { localStorage.setItem(key, JSON.stringify({t: Date.now(), d: txt})); } catch (e) {} return txt; });
+    if (st && st.d && Date.now() - st.t < 3 * 3600 * 1000) {
+      if (Date.now() - st.t > 4000) net().then(txt => { if (txt !== st.d) window.dispatchEvent(new CustomEvent('rrr-fresh', {detail: act})); }).catch(() => {});
+      return Promise.resolve(mk(st.d));
+    }
+    return net().then(mk);
+  };
+})();
+</script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--g:#ffb400;--bg:#0a0e17;--card:#131a29;--line:#222c42;--mut:#9aa6bd}
@@ -553,7 +570,7 @@ new MutationObserver(() => {
   else { refBusy = false; REFCODE = ''; $('refLink').value = ''; $('refStat').innerText = ''; }
 }).observe(document.body, {attributes: true, attributeFilter: ['class']});
 
-renderConn(); loadConfig();
+renderConn(); loadConfig(); fetch(WEB_APP_URL + '?action=getSlots').catch(() => {});
 { const b = document.querySelector('#conn button[onclick="share()"]'); if (b) b.remove(); if (!$('conn').children.length) $('conn').parentElement.style.display = 'none'; }   // NEW: old Share button replaced by the referral card
 if (token) enter();
 </script>
@@ -574,30 +591,42 @@ Object.assign(MSG, {
   UID_BANNED: 'This Free Fire UID is banned and cannot be used.',
   ESEWA_BANNED: 'This e-Sewa ID is banned, so withdrawals to it are blocked. Please contact support.'
 });
-function toast(t) {
-  let e = $('toastBox');
-  if (!e) { e = document.createElement('div'); e.id = 'toastBox'; e.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);max-width:88%;background:#1c2438;color:#fff;border:1px solid #ffb400;border-radius:12px;padding:12px 16px;font-size:14px;z-index:9999;display:none;text-align:center'; document.body.appendChild(e); }
-  e.innerText = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(() => { e.style.display = 'none'; }, 7000);
-}
-function supportUrl(text) {
-  if (SOC.discord) return SOC.discord;
-  if (SOC.whatsapp) return SOC.whatsapp + (SOC.whatsapp.indexOf('?') < 0 && /wa\.me|whatsapp/.test(SOC.whatsapp) ? '?text=' + encodeURIComponent(text + (userEmail ? '\nMy email: ' + userEmail : '')) : '');
-  return SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || '';
-}
-function copySupportMsg(text) {
-  try { navigator.clipboard.writeText(text + (userEmail ? '\nMy email: ' + userEmail : '')); } catch (e) {}
-  toast(SOC.discord ? '📋 Your message is copied. In Discord open #support (or a ticket) and paste it.' : '📋 Your message is copied. Paste it in the chat that opens.');
-}
-function wireSupport() {   // support buttons are real links (target=_blank), so the browser never blocks them as a popup
+/* messages appear inside the page (not as browser pop-ups) */
+window.alert = function (m) {
+  m = String(m == null ? '' : m);
+  let box = document.getElementById('msgStack');
+  if (!box) { box = document.createElement('div'); box.id = 'msgStack'; box.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(92vw,520px);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none'; document.body.appendChild(box); }
+  const bad = /^(❌|⚠️)/.test(m), good = /^(✅|🎉|🏆|📋|📸)/.test(m), d = document.createElement('div'), t = document.createElement('div'), x = document.createElement('button');
+  d.style.cssText = 'pointer-events:auto;background:#141a2b;color:#fff;border:1px solid ' + (bad ? '#ff5a5a' : good ? '#35c76f' : '#ffb400') + ';border-left-width:5px;border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.5);white-space:pre-wrap;word-break:break-word;display:flex;gap:10px;align-items:flex-start';
+  t.style.flex = '1'; t.textContent = m;
+  x.textContent = '✕'; x.setAttribute('aria-label', 'Close'); x.style.cssText = 'background:none;border:0;color:#9aa6bd;font-size:18px;cursor:pointer;line-height:1;padding:0 2px';
+  d.append(t, x); box.appendChild(d);
+  const timer = setTimeout(() => d.remove(), Math.min(15000, 4500 + m.length * 45)); x.onclick = () => { clearTimeout(timer); d.remove(); };
+};
+/* Support: a plain link straight to Discord (no message, no pop-up) */
+function supportUrl() { return SOC.discord || SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || SOC.whatsapp || ''; }
+function wireSupport() {
   document.querySelectorAll('[data-support]').forEach(a => {
     if (a._w) return; a._w = 1;
-    const u = supportUrl(a.dataset.support);
-    if (u) { a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.addEventListener('click', () => copySupportMsg(a.dataset.support)); }
-    else { a.href = '#'; a.addEventListener('click', ev => { ev.preventDefault(); toast('Support link is not set yet.'); }); }
+    const u = supportUrl();
+    if (u) { a.href = u; a.target = '_blank'; a.rel = 'noopener'; } else { a.href = '#'; a.addEventListener('click', ev => { ev.preventDefault(); alert('Support link is not set yet.'); }); }
   });
 }
-function openSupport(text) { const u = supportUrl(text); if (!u) return toast('Support link is not set yet.'); copySupportMsg(text); if (!window.open(u, '_blank')) location.href = u; }
+function openSupport() { const u = supportUrl(); if (!u) return alert('Support link is not set yet.'); if (!window.open(u, '_blank')) location.href = u; }
 wireSupport();
+/* speed: when the saved answer of a list is newer than the page, the page is redrawn with the fresh one */
+window.addEventListener('rrr-fresh', e => {
+  const a = e.detail, g = () => { try { return JSON.parse(JSON.parse(localStorage.getItem('rrr_c_' + a)).d); } catch (x) { return null; } };
+  try {
+    if (a === 'getConfig') loadConfig();
+    else if (a === 'getSlots') loadSlots();
+    else if (a === 'getRules') loadRules();
+    else if (a === 'getWinners') { const v = g(); if (v) { WIN = v; if ($('vWinners').classList.contains('on')) renderWinners(); } }
+    else if (a === 'getLeaderboard') { const v = g(); if (v) { LB = v; if ($('lbWrap').style.display !== 'none') renderLb(); } }
+    else if (a === 'getGameMatches' && window.RRRG) RRRG.refresh();
+  } catch (x) {}
+});
+setTimeout(() => ['getWinners', 'getRules', 'getLeaderboard', 'getGameMatches'].forEach((a, i) => setTimeout(() => fetch(WEB_APP_URL + '?action=' + a).catch(() => {}), i * 500)), 1500);   // load the other pages quietly, so they open at once
 async function loadWalletInfo() {
   if (!token) return;
   try {
@@ -622,55 +651,71 @@ function shotFull(img) {   // the whole screenshot, small (kept only as proof)
   c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
   return c.toDataURL('image/jpeg', 0.7).split(',')[1];
 }
-function shotFindPanel(d, w, h) {   // d = RGBA pixels of a small copy of the screenshot (w x h). Finds the light-grey name panel of the profile card.
+function shotFindPanel(d, w, h) {   // d = RGBA pixels of a small copy of the screenshot (w x h). Finds the light-grey name panel of the Free Fire profile card. Returns {x0,y0,x1,y1,area} or null.
   const n = w * h, mask = new Uint8Array(n), lab = new Int32Array(n), stack = new Int32Array(n);
-  for (let i = 0, p = 0; i < n; i++, p += 4) { const mn = Math.min(d[p], d[p + 1], d[p + 2]), mx = Math.max(d[p], d[p + 1], d[p + 2]); mask[i] = (mn >= 190 && mx - mn <= 18) ? 1 : 0; }
-  let best = null, id = 0;
-  for (let s = 0; s < n; s++) {
-    if (!mask[s] || lab[s]) continue;
-    id++; let sp = 0, minx = w, maxx = 0, miny = h, maxy = 0, area = 0; stack[sp++] = s; lab[s] = id;
-    while (sp) {
-      const q = stack[--sp], x = q % w, y = (q / w) | 0; area++;
-      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
-      if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = id; stack[sp++] = q - 1; }
-      if (x < w - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = id; stack[sp++] = q + 1; }
-      if (y > 0 && mask[q - w] && !lab[q - w]) { lab[q - w] = id; stack[sp++] = q - w; }
-      if (y < h - 1 && mask[q + w] && !lab[q + w]) { lab[q + w] = id; stack[sp++] = q + w; }
+  function pass(minV, spread, fill, minAspect) {
+    for (let i = 0, p = 0; i < n; i++, p += 4) { const mn = Math.min(d[p], d[p + 1], d[p + 2]), mx = Math.max(d[p], d[p + 1], d[p + 2]); mask[i] = (mn >= minV && mx - mn <= spread) ? 1 : 0; }
+    lab.fill(0); let best = null, id = 0;
+    for (let s = 0; s < n; s++) {
+      if (!mask[s] || lab[s]) continue;
+      id++; let sp = 0, minx = w, maxx = 0, miny = h, maxy = 0, area = 0; stack[sp++] = s; lab[s] = id;
+      while (sp) {
+        const q = stack[--sp], x = q % w, y = (q / w) | 0; area++;
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+        if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = id; stack[sp++] = q - 1; }
+        if (x < w - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = id; stack[sp++] = q + 1; }
+        if (y > 0 && mask[q - w] && !lab[q - w]) { lab[q - w] = id; stack[sp++] = q - w; }
+        if (y < h - 1 && mask[q + w] && !lab[q + w]) { lab[q + w] = id; stack[sp++] = q + w; }
+      }
+      const bw = maxx - minx + 1, bh = maxy - miny + 1;
+      if (bw / h < 0.25 || bw / h > 0.75 || bh / h < 0.06 || bh / h > 0.26 || bw / bh < minAspect || bw / bh > 9 || maxy > h * 0.6 || area / (bw * bh) < fill) continue;
+      if (!best || area > best.area) best = {x0: minx, y0: miny, x1: maxx + 1, y1: maxy + 1, area};
     }
-    const bw = maxx - minx + 1, bh = maxy - miny + 1;
-    if (bw / h < 0.25 || bw / h > 0.75 || bh / h < 0.06 || bh / h > 0.22 || bw / bh < 2 || bw / bh > 8 || maxy > h * 0.55 || area / (bw * bh) < 0.5) continue;
-    if (!best || area > best.area) best = {x0: minx, y0: miny, x1: maxx + 1, y1: maxy + 1, area};
+    return best;
   }
-  return best;
+  return pass(190, 18, 0.3, 2) || pass(170, 26, 0.25, 1.6);
 }
-function shotRegions(d, sw, sh, W, H) {   // [[x0,y0,x1,y1], ...] in pixels of the real screenshot: name area, then UID strip (or fixed guesses if the panel is not found)
+/* Everything is measured in screenshot HEIGHT units (H): the Free Fire UI scales with the screen height, so the card has the same size on a laptop and on a phone.
+   y0 = top of the grey name panel, x0/x1 = its left/right edge. Name line = y0 + 0.004H..0.050H, UID line = y0 + 0.126H..0.176H (right end of the card). */
+function shotRects(P, W, H) {
+  const x0 = P.x0, x1 = P.x1, y0 = P.y0;
+  return [[x0 + 0.11 * H, y0 + 0.004 * H, x1 - 0.015 * H, y0 + 0.050 * H], [x1 - 0.30 * H, y0 + 0.126 * H, x1 + 0.02 * H, y0 + 0.176 * H]];
+}
+function shotRegions(d, sw, sh, W, H) {   // returns [[name rect, uid rect], ...] in real pixels. If the card is not found: two guesses (laptop layout and phone layout).
   const P = shotFindPanel(d, sw, sh), k = H / sh;
-  if (P) { const x0 = P.x0 * k, y0 = P.y0 * k, x1 = P.x1 * k, y1 = P.y1 * k; return [[x0 - 0.01 * H, y0 - 0.005 * H, x1, y1 + 0.005 * H], [x1 - 0.45 * H, y1 - 0.06 * H, x1 + 0.03 * H, y1 + 0.035 * H]]; }
-  return [[.58 * W, .165 * H, .98 * W, .285 * H], [.58 * W, .285 * H, .99 * W, .39 * H], [.35 * W, .165 * H, .66 * W, .285 * H], [.35 * W, .285 * H, .67 * W, .39 * H]];
+  if (P) return {found: true, rects: shotRects({x0: P.x0 * k, y0: P.y0 * k, x1: P.x1 * k, y1: P.y1 * k}, W, H)};
+  const A = {x0: W - 0.115 * H - 0.53 * H, x1: W - 0.115 * H, y0: 0.17 * H}, B = {x1: 0.633 * W, y0: 0.17 * H}; B.x0 = B.x1 - 0.53 * H;
+  return {found: false, rects: shotRects(A, W, H).concat(shotRects(B, W, H))};
 }
 
-function shotCrops(img) {   // finds the profile card in ANY Free Fire screenshot (laptop or phone) and cuts out only the name + UID area, enlarged (plus a high-contrast copy)
+function shotCrops(img) {   // finds the profile card in ANY Free Fire screenshot (laptop or phone) and cuts out ONLY the name line and the UID line (UID twice: colour + high contrast), stitched in one small picture
   const W = img.width, H = img.height; if (W < H) return {};
   const sh = 270, sw = Math.round(sh * W / H), sc = document.createElement('canvas'); sc.width = sw; sc.height = sh;
   const sx = sc.getContext('2d', {willReadFrequently: true}); sx.drawImage(img, 0, 0, sw, sh);
-  const regs = shotRegions(sx.getImageData(0, 0, sw, sh).data, sw, sh, W, H), OW = 1500, gap = 24;
-  const parts = regs.map(r => { const x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(W, r[2]), y1 = Math.min(H, r[3]); return {sx: x0, sy: y0, sw: x1 - x0, sh: y1 - y0, h: Math.max(10, Math.round((y1 - y0) * OW / (x1 - x0)))}; });
+  const R = shotRegions(sx.getImageData(0, 0, sw, sh).data, sw, sh, W, H), OW = 1200, gap = 20, strips = [];
+  for (let i = 0; i < R.rects.length; i += 2) strips.push({r: R.rects[i], enh: false}, {r: R.rects[i + 1], enh: false}, {r: R.rects[i + 1], enh: true});
+  const parts = strips.map(s => { const x0 = Math.max(0, s.r[0]), y0 = Math.max(0, s.r[1]), x1 = Math.min(W, s.r[2]), y1 = Math.min(H, s.r[3]), w = Math.max(10, x1 - x0), h = Math.max(10, y1 - y0); return {sx: x0, sy: y0, sw: w, sh: h, h: Math.max(10, Math.round(h * OW / w)), enh: s.enh}; });
   const total = parts.reduce((a, q) => a + q.h + gap, 0), c = document.createElement('canvas'); c.width = OW; c.height = total;
   const x = c.getContext('2d', {willReadFrequently: true}); x.fillStyle = '#fff'; x.fillRect(0, 0, OW, total);
-  let y = 0; parts.forEach(q => { x.drawImage(img, q.sx, q.sy, q.sw, q.sh, 0, y, OW, q.h); y += q.h + gap; });
-  const crop1 = c.toDataURL('image/jpeg', 0.9).split(',')[1];
-  const d = x.getImageData(0, 0, OW, total), a = d.data, hist = new Array(256).fill(0); let n = 0;
-  for (let i = 0; i < a.length; i += 4) { const g = (a[i] * 0.3 + a[i + 1] * 0.59 + a[i + 2] * 0.11) | 0; a[i] = g; hist[g]++; n++; }
-  let lo = 0, hi = 255, s = 0; while (lo < 255 && s + hist[lo] < n * 0.02) s += hist[lo++]; s = 0; while (hi > 0 && s + hist[hi] < n * 0.02) s += hist[hi--];
-  const k = hi > lo ? 255 / (hi - lo) : 1;
-  for (let i = 0; i < a.length; i += 4) { const g = Math.max(0, Math.min(255, (a[i] - lo) * k)) | 0; a[i] = a[i + 1] = a[i + 2] = g; }
-  x.putImageData(d, 0, 0);
-  return {crop1, crop2: c.toDataURL('image/jpeg', 0.9).split(',')[1]};
+  let y = 0;
+  parts.forEach(q => {
+    x.drawImage(img, q.sx, q.sy, q.sw, q.sh, 0, y, OW, q.h);
+    if (q.enh) {   // grey + stretched contrast, only for this strip
+      const d = x.getImageData(0, y, OW, q.h), a = d.data, hist = new Array(256).fill(0); let n = 0;
+      for (let i = 0; i < a.length; i += 4) { const g = (a[i] * 0.3 + a[i + 1] * 0.59 + a[i + 2] * 0.11) | 0; a[i] = g; hist[g]++; n++; }
+      let lo = 0, hi = 255, s = 0; while (lo < 255 && s + hist[lo] < n * 0.02) s += hist[lo++]; s = 0; while (hi > 0 && s + hist[hi] < n * 0.02) s += hist[hi--];
+      const k = hi > lo ? 255 / (hi - lo) : 1;
+      for (let i = 0; i < a.length; i += 4) { const g = Math.max(0, Math.min(255, (a[i] - lo) * k)) | 0; a[i] = a[i + 1] = a[i + 2] = g; }
+      x.putImageData(d, 0, y);
+    }
+    y += q.h + gap;
+  });
+  return {crop1: c.toDataURL('image/jpeg', 0.9).split(',')[1]};
 }
 async function shotRead(file) { const img = await shotLoad(file); return api('uidScan', Object.assign({image: shotFull(img)}, shotCrops(img))); }
 async function shotPick(inp, uidId, ignId, msgId) {
   const f = inp.files && inp.files[0], msg = $(msgId); if (!f) return;
-  SHOT = {id: '', uid: '', ign: ''}; msg.innerText = '⏳ Reading your screenshot... this can take up to 20 seconds.';
+  SHOT = {id: '', uid: '', ign: ''}; msg.innerText = '⏳ Reading your UID and name... usually 5 to 10 seconds.';
   try {
     const d = await shotRead(f);
     if (d.status !== 'SUCCESS') { msg.innerText = '❌ ' + (MSG[d.status] || d.status); return; }

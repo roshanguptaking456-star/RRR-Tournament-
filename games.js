@@ -656,9 +656,11 @@ function build() {
 
 /* ---------- data + lists ---------- */
 async function load() {
+  const mineReq = token ? api('gameMine').catch(() => null) : Promise.resolve(null);   // asked at the same time (it is the slower one)
   try { const d = await (await fetch(WEB_APP_URL + '?action=getGameMatches')).json(); if (d.cfg) CFG = d.cfg; OPEN = d.matches || []; } catch (e) {}
   MSG.BAD_FEE = 'Entry fee must be between ' + CFG.minFee + ' and ' + CFG.maxFee + ' coins';
-  if (token) { try { const d = await api('gameMine'); if (d.status === 'SUCCESS') { MINE = d.mine; if (d.profile) { PROFILE = d.profile; fillProfile(); } } } catch (e) {} } else MINE = [];
+  renderCards(); if ($('vGameList').classList.contains('on')) renderList();   // the public list is shown first
+  if (token) { const d = await mineReq; if (d && d.status === 'SUCCESS') { MINE = d.mine; if (d.profile) { PROFILE = d.profile; fillProfile(); } } } else MINE = [];
   renderCards(); renderMine(); if ($('vGameList').classList.contains('on')) renderList();
 }
 function openGames() { show('vGames'); load(); }

@@ -660,7 +660,7 @@ async function load() {
   try { const d = await (await fetch(WEB_APP_URL + '?action=getGameMatches')).json(); if (d.cfg) CFG = d.cfg; OPEN = d.matches || []; } catch (e) {}
   MSG.BAD_FEE = 'Entry fee must be between ' + CFG.minFee + ' and ' + CFG.maxFee + ' coins';
   renderCards(); if ($('vGameList').classList.contains('on')) renderList();   // the public list is shown first
-  if (token) { const d = await mineReq; if (d && d.status === 'SUCCESS') { MINE = d.mine; if (d.profile) { PROFILE = d.profile; fillProfile(); } } } else MINE = [];
+  if (token) { const d = await mineReq; if (d && d.status === 'SUCCESS') { MINE = (d.mine || []).filter(m => !((m.status === 'Done' || m.status === 'Cancelled') && Date.now() - m.created > 36 * 3600000 && !/^HOLD/.test(m.reward || ''))); if (d.profile) { PROFILE = d.profile; fillProfile(); } } } else MINE = [];
   renderCards(); renderMine(); if ($('vGameList').classList.contains('on')) renderList();
 }
 function openGames() { show('vGames'); load(); }
@@ -761,7 +761,7 @@ function simple(btn, name, id, ok) {
   });
 }
 const begin = (id, b) => simple(b, 'gameBegin', id, '✅ Match started! Everyone was notified.');
-const cancel = (id, b) => { if (confirm('Cancel this room? Everybody gets their entry fee back.')) simple(b, 'gameCancel', id, '✅ Room cancelled and fees refunded.'); };
+const cancel = (id, b) => { rrrConfirm('Cancel this room? Everybody gets their entry fee back.').then(y => { if (y) simple(b, 'gameCancel', id, '✅ Room cancelled and fees refunded.'); }); };
 
 /* ---------- playing ---------- */
 function prep(k, matchId) {
@@ -811,7 +811,7 @@ function saveProfile(e) {
   e.preventDefault();
   guarded($('pfBtn'), async () => {
     const gi = $('pfIgn').value.trim(), gu = $('pfUid').value.trim();
-    if (gi !== (PROFILE.ign || '') || gu !== (PROFILE.uid || '')) { if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nAfter saving you cannot change these for 3 days. Is this correct?')) return; } else return alert('Nothing changed.');
+    if (gi !== (PROFILE.ign || '') || gu !== (PROFILE.uid || '')) { if (!(await rrrConfirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nAfter saving you cannot change these for 3 days. Is this correct?'))) return; } else return alert('Nothing changed.');
     const d = await api('gameProfileSave', {ign: gi, uid: gu, scanId: SHOT.id});
     if (shotHandle(d, 'pfUid', 'pfIgn')) return;
     if (d.status === 'PROFILE_WAIT') return alert('🔒 You can change your IGN/UID after ' + new Date(d.until).toLocaleString() + '.');
@@ -831,5 +831,6 @@ $('vAccount').querySelector('.card').insertAdjacentHTML('afterend', `<div class=
   <button class="gbtn" id="pfBtn" type="submit">Save</button></form></div>`);
 { const oa = openAccount; openAccount = function () { oa(); if (token) loadProfile(); }; }
 new MutationObserver(() => { if (!document.body.classList.contains('in')) { PROFILE = {ign: '', uid: ''}; fillProfile(); $('topBal').innerText = '0'; MINE = []; } }).observe(document.body, {attributes: true, attributeFilter: ['class']});
+setTimeout(load, 300);   // games data is fetched in the background first, so the Games page opens instantly
 setInterval(() => { if (document.visibilityState === 'visible' && ($('vGames').classList.contains('on') || $('vGameList').classList.contains('on'))) load(); }, 20000);
 })();

@@ -339,7 +339,7 @@ function saveGate(e) {
   e.preventDefault();
   guarded($('gBtn'), async () => {
     const gi = $('gIgn').value.trim(), gu = $('gUid').value.trim();
-    if (!confirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nYou cannot change these for 3 days after saving. Is this correct?')) return;
+    if (!(await rrrConfirm('Please check:\n\nIGN: ' + gi + '\nUID: ' + gu + '\n\nYou cannot change these for 3 days after saving. Is this correct?'))) return;
     const d = await api('gameProfileSave', {ign: gi, uid: gu, scanId: SHOT.id}); if (shotHandle(d, 'gUid', 'gIgn')) return;
     if (d.status === 'SUCCESS') { PROF = Object.assign({}, d.profile, {loaded:true}); if (window.RRRG && RRRG.syncProfile) RRRG.syncProfile(PROF); $('profGate').style.display = 'none'; const nx = profNext; profNext = null; if (nx) nx(); }
     else if (d.status !== 'Banned') alert('❌ ' + (MSG[d.status] || d.status));
@@ -518,7 +518,7 @@ NAVOF.vHistory = 'nAcc';
 Object.assign(MSG, {DAILY_LIMIT:'You can send only 3 payment requests per day. Try again tomorrow', MATCH_CLOSED:'This match is closed'});
 async function clearNotifs() {
   if (!NOTIFS.length) return;
-  if (!confirm('Delete all your notifications?')) return;
+  if (!(await rrrConfirm('Delete all your notifications?'))) return;
   try {
     const d = await api('clearNotifications');
     if (d.status === 'SUCCESS') { NOTIFS = []; UNREAD = 0; $('badge').style.display = 'none'; $('nList').innerHTML = '<p class="empty">No notifications yet.</p>'; }
@@ -574,7 +574,7 @@ renderConn(); loadConfig(); fetch(WEB_APP_URL + '?action=getSlots').catch(() => 
 { const b = document.querySelector('#conn button[onclick="share()"]'); if (b) b.remove(); if (!$('conn').children.length) $('conn').parentElement.style.display = 'none'; }   // NEW: old Share button replaced by the referral card
 if (token) enter();
 </script>
-<script src="games.js"></script>
+<script src="games.js?v=20261127"></script>
 <script>
 /* ---------- V5 additions: new messages, support, wallet details, leaderboard, countdown, installable app ---------- */
 Object.assign(MSG, {
@@ -591,40 +591,116 @@ Object.assign(MSG, {
   UID_BANNED: 'This Free Fire UID is banned and cannot be used.',
   ESEWA_BANNED: 'This e-Sewa ID is banned, so withdrawals to it are blocked. Please contact support.'
 });
-/* messages appear as an app-style popup in the middle of the screen (not browser pop-ups, not from the top) */
+/* ===== RRR UI layer (added): app-style popups, button feedback, loaders ===== */
 (function () {
-  const Q = []; let busy = false;
-  const st = document.createElement('style');
-  st.textContent = '@keyframes rrrPop{from{opacity:0;transform:scale(.88) translateY(14px)}to{opacity:1;transform:none}}@keyframes rrrFade{from{opacity:0}to{opacity:1}}' +
-    '#rrrDlg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;animation:rrrFade .18s ease}' +
-    '#rrrDlg .bx{width:min(92vw,360px);background:#141a2b;border:1px solid #222c42;border-radius:20px;padding:24px 20px 18px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:rrrPop .22s ease}' +
-    '#rrrDlg .ic{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px}' +
-    '#rrrDlg .tt{color:#fff;font-size:18px;font-weight:700;margin-bottom:8px}' +
-    '#rrrDlg .tx{color:#c5c6c7;font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;margin-bottom:18px}' +
-    '#rrrDlg .ok{width:100%;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;color:#111;cursor:pointer}';
-  document.head.appendChild(st);
+  const SK = ['homeList', 'gCards', 'gMine'];
+  const css = `
+@keyframes rrrPop{from{opacity:0;transform:scale(.88) translateY(14px)}to{opacity:1;transform:none}}
+@keyframes rrrFade{from{opacity:0}to{opacity:1}}
+@keyframes rrrIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes rrrSpin{to{transform:rotate(360deg)}}
+@keyframes rrrShim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes rrrRip{from{opacity:.4;transform:translate(-50%,-50%) scale(0)}to{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+@keyframes rrrIcon{0%{transform:scale(.3)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes rrrPulse{50%{transform:scale(.86)}}
+.view.on{animation:rrrIn .28s cubic-bezier(.2,.8,.2,1)}
+.modal-c{animation:rrrPop .22s ease}
+button,.nbtn,.gbtn,.mcard,.rc,.tabbar a{transition:transform .12s ease,filter .12s ease;-webkit-tap-highlight-color:transparent}
+button:active:not(:disabled),.nbtn:active,.gbtn:active,.mcard:active,.tabbar a:active{transform:scale(.95);filter:brightness(1.15)}
+.rc:active{transform:scale(.985)}
+#gArena button:active,#gArena .nbtn:active{transform:none;filter:none}
+.tabbar a.on span{animation:rrrIcon .35s ease}
+.rrr-rip{position:fixed;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,180,0,.55),rgba(255,180,0,0) 70%);pointer-events:none;z-index:99998;animation:rrrRip .5s ease-out forwards}
+.rrr-busy{pointer-events:none;position:relative;overflow:hidden}
+.rrr-busy::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%) 0 0/200% 100%;animation:rrrShim 1s linear infinite}
+.rrr-sp{display:inline-block;width:15px;height:15px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;margin-right:8px;vertical-align:-3px;animation:rrrSpin .7s linear infinite}
+#rrrBar{position:fixed;top:0;left:0;height:3px;width:0;z-index:100000;background:linear-gradient(90deg,#ffb400,#ff7a00);box-shadow:0 0 10px #ffb400;opacity:0;transition:width .4s ease,opacity .25s ease}
+.rrr-ld{padding:34px 0!important}
+.rrr-ring{position:relative;width:56px;height:56px;margin:0 auto 10px}
+.rrr-ring::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(#ffb400,rgba(255,180,0,0) 75%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));animation:rrrSpin 1s linear infinite}
+.rrr-ring img{position:absolute;inset:9px;width:38px;height:38px;border-radius:10px;animation:rrrPulse 1.4s ease-in-out infinite}
+${SK.map(i => '#' + i + ':empty::before,#' + i + ':empty::after').join(',')}{content:"";display:block;height:92px;border-radius:16px;margin-bottom:12px;background:linear-gradient(100deg,#141b2d 30%,#1e2842 50%,#141b2d 70%) 0 0/200% 100%;animation:rrrShim 1.3s linear infinite}
+#rrrDlg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;animation:rrrFade .18s ease}
+#rrrDlg .bx{width:min(92vw,360px);background:#141a2b;border:1px solid #222c42;border-radius:20px;padding:24px 20px 18px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:rrrPop .22s ease}
+#rrrDlg .ic{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px;animation:rrrIcon .4s ease}
+#rrrDlg .tt{color:#fff;font-size:18px;font-weight:700;margin-bottom:8px}
+#rrrDlg .tx{color:#c5c6c7;font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;margin-bottom:18px}
+#rrrDlg .bt{display:flex;gap:10px}
+#rrrDlg .bt button{flex:1;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;color:#111;cursor:pointer}
+#rrrDlg .bt .no{background:#26314a;color:#fff}
+@media (prefers-reduced-motion:reduce){.view.on,.modal-c{animation:none}}`;
+  const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  /* ---------- popup in the middle of the screen (alert + confirm) ---------- */
+  const Q = []; let busy = false, curItem = null;
   const ov = document.createElement('div'); ov.id = 'rrrDlg';
-  ov.innerHTML = '<div class="bx" role="alertdialog" aria-modal="true"><div class="ic"></div><div class="tt"></div><div class="tx"></div><button class="ok" type="button">OK</button></div>';
+  ov.innerHTML = '<div class="bx" role="alertdialog" aria-modal="true"><div class="ic"></div><div class="tt"></div><div class="tx"></div><div class="bt"><button class="no" type="button">Cancel</button><button class="ok" type="button">OK</button></div></div>';
   document.body.appendChild(ov);
-  const ic = ov.querySelector('.ic'), tt = ov.querySelector('.tt'), tx = ov.querySelector('.tx'), ok = ov.querySelector('.ok');
+  const ic = ov.querySelector('.ic'), tt = ov.querySelector('.tt'), tx = ov.querySelector('.tx'), ok = ov.querySelector('.ok'), no = ov.querySelector('.no');
+  const EM = /^(❌|⚠️|✅|🎉|🏆|📋|📸|🔒)/;
   function show() {
-    if (busy || !Q.length) return; busy = true;
-    let m = Q.shift();
-    const bad = /^(❌|⚠️)/.test(m), good = /^(✅|🎉|🏆|📋|📸)/.test(m);
-    const em = (m.match(/^(❌|⚠️|✅|🎉|🏆|📋|📸)/) || [''])[0];
-    if (em) m = m.slice(em.length).replace(/^\s+/, '');
-    const col = bad ? '#ff5a5a' : good ? '#35c76f' : '#ffb400';
-    ic.textContent = em || 'ℹ️'; ic.style.background = col + '26'; ic.style.border = '2px solid ' + col;
-    tt.textContent = bad ? 'Oops!' : good ? 'Done' : 'Notice';
-    tx.textContent = m; ok.style.background = col;
+    if (busy || !Q.length) return; busy = true; curItem = Q.shift();
+    let m = curItem.m; const em = (m.match(EM) || [''])[0]; if (em) m = m.slice(em.length).replace(/^\s+/, '');
+    const bad = /^(❌|⚠️)/.test(em), good = /^(✅|🎉|🏆)/.test(em), col = curItem.ask ? '#ffb400' : bad ? '#ff5a5a' : good ? '#35c76f' : '#ffb400';
+    ic.textContent = curItem.ask ? '❓' : em || 'ℹ️'; ic.style.background = col + '26'; ic.style.border = '2px solid ' + col;
+    tt.textContent = curItem.ask ? 'Please confirm' : bad ? 'Oops!' : good ? 'Done' : 'Notice';
+    tx.textContent = m; ok.style.background = col; ok.textContent = curItem.ask ? 'Yes' : 'OK'; no.style.display = curItem.ask ? '' : 'none';
     ov.style.display = 'flex'; setTimeout(() => ok.focus(), 50);
   }
-  function close() { ov.style.display = 'none'; busy = false; setTimeout(show, 120); }
-  ok.onclick = close;
-  ov.addEventListener('click', e => { if (e.target === ov) close(); });
-  document.addEventListener('keydown', e => { if (busy && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); close(); } });
-  window.alert = function (m) { Q.push(String(m == null ? '' : m)); show(); };
+  function close(v) { const it = curItem; ov.style.display = 'none'; busy = false; curItem = null; if (it && it.res) it.res(v); setTimeout(show, 120); }
+  ok.onclick = () => close(true); no.onclick = () => close(false);
+  ov.addEventListener('click', e => { if (e.target === ov) close(false); });
+  document.addEventListener('keydown', e => { if (busy && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); close(e.key === 'Enter'); } });
+  window.alert = m => { Q.push({m: String(m == null ? '' : m)}); show(); };
+  window.rrrConfirm = m => new Promise(res => { Q.push({m: String(m), ask: true, res}); show(); });
+
+  /* ---------- press feedback: ripple + small vibration ---------- */
+  document.addEventListener('pointerdown', e => {
+    const t = e.target.closest && e.target.closest('button,.nbtn,.gbtn,.mcard,.rc,.tabbar a'); if (!t || t.disabled || t.closest('#gArena')) return;
+    try { navigator.vibrate && navigator.vibrate(8); } catch (x) {}
+    const r = document.createElement('span'); r.className = 'rrr-rip'; r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'; document.body.appendChild(r); setTimeout(() => r.remove(), 520);
+  }, true);
+
+  /* ---------- loading states on buttons + thin progress bar ---------- */
+  const LBL = {gameCreate: 'Creating…', gameJoin: 'Joining…', gameBegin: 'Starting…', gameCancel: 'Cancelling…', gamePlay: 'Starting…', gameSubmit: 'Sending score…', gameProfileSave: 'Saving…', joinMatch: 'Joining…',
+    submitPayment: 'Sending…', submitWithdrawal: 'Sending…', pwSet: 'Saving…', uidScan: 'Reading screenshot…', uidVerifyShot: 'Checking…', applyReferral: 'Applying…', clearNotifications: 'Clearing…', checkPlayer: 'Checking…', gameMine: 'Refreshing…', getHistory: 'Loading…'};
+  const BYTXT = [[/create/, 'Creating…'], [/join/, 'Joining…'], [/start|play/, 'Starting…'], [/cancel/, 'Cancelling…'], [/save|set /, 'Saving…'], [/refresh|reload/, 'Refreshing…'], [/withdraw|submit|send|pay/, 'Sending…'], [/sign|log ?in|continue/, 'Signing in…'], [/clear|delete/, 'Clearing…'], [/verify|check/, 'Checking…']];
+  const bar = document.createElement('div'); bar.id = 'rrrBar'; document.body.appendChild(bar);
+  let pend = 0, barT = 0, last = {el: null, t: 0}, gBtn = null;
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); last = {el: b, t: Date.now()}; }, true);
+  function barOn() { clearTimeout(barT); bar.style.transition = 'none'; bar.style.width = '0'; bar.style.opacity = '1'; void bar.offsetWidth; bar.style.transition = 'width 8s cubic-bezier(.1,.6,.2,1),opacity .25s'; bar.style.width = '88%'; }
+  function barOff() { bar.style.transition = 'width .25s ease,opacity .35s ease .2s'; bar.style.width = '100%'; bar.style.opacity = '0'; barT = setTimeout(() => { bar.style.transition = 'none'; bar.style.width = '0'; }, 700); }
+  function setBusy(btn, label) {
+    if (!btn || btn._rb) return;
+    const t = (btn.innerText || '').toLowerCase(); let l = label; if (!l) { l = 'Please wait…'; BYTXT.some(p => p[0].test(t) && (l = p[1], true)); }
+    btn._rb = {h: btn.innerHTML, w: btn.style.minWidth}; btn.style.minWidth = btn.offsetWidth + 'px'; btn.classList.add('rrr-busy');
+    btn.innerHTML = '<i class="rrr-sp"></i><span>' + l + '</span>'; btn._rbm = btn.innerHTML;
+  }
+  function setLabel(btn, l) { const s = btn && btn._rb && btn.querySelector('span'); if (s) { s.textContent = l; btn._rbm = btn.innerHTML; } }
+  function clearBusy(btn) {
+    if (!btn || !btn._rb) return; const o = btn._rb; btn._rb = null; btn.classList.remove('rrr-busy'); btn.style.minWidth = o.w;
+    if (btn.innerHTML === btn._rbm) btn.innerHTML = o.h;
+  }
+  const _g = window.guarded;
+  if (typeof _g === 'function') window.guarded = async function (btn, fn) { const own = !!btn; if (own) { setBusy(btn); gBtn = btn; } try { return await _g(btn, fn); } finally { if (own) { if (gBtn === btn) gBtn = null; clearBusy(btn); } } };
+  const _f = window.fetch.bind(window);
+  window.fetch = function (url, opts) {
+    let act = ''; try { act = opts && opts.body ? JSON.parse(opts.body).action : (String(url).split('action=')[1] || '').split('&')[0]; } catch (e) {}
+    const isApp = typeof url === 'string' && url.indexOf(WEB_APP_URL) === 0; if (!isApp) return _f(url, opts);
+    let tgt = gBtn, shown = false, tm = 0;
+    if (tgt) setLabel(tgt, LBL[act] || ((tgt._rbm || '').replace(/<[^>]+>/g, '') || 'Please wait…'));
+    pend++; if (pend === 1) barT = setTimeout(barOn, 150);
+    if (!tgt && last.el && Date.now() - last.t < 1000 && last.el.isConnected && !last.el._rb) { tgt = last.el; tm = setTimeout(() => { shown = true; setBusy(tgt, LBL[act]); }, 160); }
+    const done = () => { clearTimeout(tm); if (shown) clearBusy(tgt); if (--pend <= 0) { pend = 0; clearTimeout(barT); barOff(); } };
+    return _f(url, opts).then(r => { done(); return r; }, e => { done(); throw e; });
+  };
+
+  /* ---------- branded loader instead of plain "Loading..." text ---------- */
+  const LD = '<div class="rrr-ring"><img src="favicon-192.png" alt=""></div><small>Loading…</small>';
+  function fix(el) { if (el.nodeType === 1 && el.matches('p.empty') && !el.classList.contains('rrr-ld') && /^Loading/i.test(el.textContent.trim())) { el.classList.add('rrr-ld'); el.innerHTML = LD; } }
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { fix(n); if (n.nodeType === 1 && n.querySelectorAll) n.querySelectorAll('p.empty').forEach(fix); }))).observe(document.body, {childList: true, subtree: true});
 })();
+
 /* Support: a plain link straight to Discord (no message, no pop-up) */
 function supportUrl() { return SOC.discord || SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || SOC.whatsapp || ''; }
 function wireSupport() {
@@ -648,7 +724,7 @@ window.addEventListener('rrr-fresh', e => {
     else if (a === 'getGameMatches' && window.RRRG) RRRG.refresh();
   } catch (x) {}
 });
-setTimeout(() => ['getWinners', 'getRules', 'getLeaderboard', 'getGameMatches'].forEach((a, i) => setTimeout(() => fetch(WEB_APP_URL + '?action=' + a).catch(() => {}), i * 500)), 1500);   // load the other pages quietly, so they open at once
+setTimeout(() => ['getGameMatches', 'getWinners', 'getRules', 'getLeaderboard'].forEach((a, i) => setTimeout(() => fetch(WEB_APP_URL + '?action=' + a).catch(() => {}), i * 300)), 600);   // load the other pages quietly, so they open at once
 async function loadWalletInfo() {
   if (!token) return;
   try {

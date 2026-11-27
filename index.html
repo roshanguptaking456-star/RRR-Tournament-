@@ -591,18 +591,40 @@ Object.assign(MSG, {
   UID_BANNED: 'This Free Fire UID is banned and cannot be used.',
   ESEWA_BANNED: 'This e-Sewa ID is banned, so withdrawals to it are blocked. Please contact support.'
 });
-/* messages appear inside the page (not as browser pop-ups) */
-window.alert = function (m) {
-  m = String(m == null ? '' : m);
-  let box = document.getElementById('msgStack');
-  if (!box) { box = document.createElement('div'); box.id = 'msgStack'; box.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(92vw,520px);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none'; document.body.appendChild(box); }
-  const bad = /^(❌|⚠️)/.test(m), good = /^(✅|🎉|🏆|📋|📸)/.test(m), d = document.createElement('div'), t = document.createElement('div'), x = document.createElement('button');
-  d.style.cssText = 'pointer-events:auto;background:#141a2b;color:#fff;border:1px solid ' + (bad ? '#ff5a5a' : good ? '#35c76f' : '#ffb400') + ';border-left-width:5px;border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.5);white-space:pre-wrap;word-break:break-word;display:flex;gap:10px;align-items:flex-start';
-  t.style.flex = '1'; t.textContent = m;
-  x.textContent = '✕'; x.setAttribute('aria-label', 'Close'); x.style.cssText = 'background:none;border:0;color:#9aa6bd;font-size:18px;cursor:pointer;line-height:1;padding:0 2px';
-  d.append(t, x); box.appendChild(d);
-  const timer = setTimeout(() => d.remove(), Math.min(15000, 4500 + m.length * 45)); x.onclick = () => { clearTimeout(timer); d.remove(); };
-};
+/* messages appear as an app-style popup in the middle of the screen (not browser pop-ups, not from the top) */
+(function () {
+  const Q = []; let busy = false;
+  const st = document.createElement('style');
+  st.textContent = '@keyframes rrrPop{from{opacity:0;transform:scale(.88) translateY(14px)}to{opacity:1;transform:none}}@keyframes rrrFade{from{opacity:0}to{opacity:1}}' +
+    '#rrrDlg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;animation:rrrFade .18s ease}' +
+    '#rrrDlg .bx{width:min(92vw,360px);background:#141a2b;border:1px solid #222c42;border-radius:20px;padding:24px 20px 18px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:rrrPop .22s ease}' +
+    '#rrrDlg .ic{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px}' +
+    '#rrrDlg .tt{color:#fff;font-size:18px;font-weight:700;margin-bottom:8px}' +
+    '#rrrDlg .tx{color:#c5c6c7;font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;margin-bottom:18px}' +
+    '#rrrDlg .ok{width:100%;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;color:#111;cursor:pointer}';
+  document.head.appendChild(st);
+  const ov = document.createElement('div'); ov.id = 'rrrDlg';
+  ov.innerHTML = '<div class="bx" role="alertdialog" aria-modal="true"><div class="ic"></div><div class="tt"></div><div class="tx"></div><button class="ok" type="button">OK</button></div>';
+  document.body.appendChild(ov);
+  const ic = ov.querySelector('.ic'), tt = ov.querySelector('.tt'), tx = ov.querySelector('.tx'), ok = ov.querySelector('.ok');
+  function show() {
+    if (busy || !Q.length) return; busy = true;
+    let m = Q.shift();
+    const bad = /^(❌|⚠️)/.test(m), good = /^(✅|🎉|🏆|📋|📸)/.test(m);
+    const em = (m.match(/^(❌|⚠️|✅|🎉|🏆|📋|📸)/) || [''])[0];
+    if (em) m = m.slice(em.length).replace(/^\s+/, '');
+    const col = bad ? '#ff5a5a' : good ? '#35c76f' : '#ffb400';
+    ic.textContent = em || 'ℹ️'; ic.style.background = col + '26'; ic.style.border = '2px solid ' + col;
+    tt.textContent = bad ? 'Oops!' : good ? 'Done' : 'Notice';
+    tx.textContent = m; ok.style.background = col;
+    ov.style.display = 'flex'; setTimeout(() => ok.focus(), 50);
+  }
+  function close() { ov.style.display = 'none'; busy = false; setTimeout(show, 120); }
+  ok.onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  document.addEventListener('keydown', e => { if (busy && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); close(); } });
+  window.alert = function (m) { Q.push(String(m == null ? '' : m)); show(); };
+})();
 /* Support: a plain link straight to Discord (no message, no pop-up) */
 function supportUrl() { return SOC.discord || SOC.telegram || SOC.messenger || SOC.facebook || SOC.instagram || SOC.whatsapp || ''; }
 function wireSupport() {

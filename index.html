@@ -2,18 +2,18 @@
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0a0e17">
-<link rel="manifest" href="manifest.json"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RRR Tournament">
-<meta name="description" content="RRR Tournament Nepal: join daily Free Fire Solo, Duo, Squad and Clash Squad matches and play mini games. Win coins and withdraw with eSewa.">
-<link rel="canonical" href="https://rrrfftournament.netlify.app/">
-<meta property="og:type" content="website"><meta property="og:site_name" content="RRR Tournament">
-<meta property="og:title" content="RRR Tournament Nepal - Free Fire Matches & Mini Games">
+<link rel="manifest" href="manifest.json"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TournamentsNP">
+<meta name="description" content="TournamentsNP: join daily Free Fire Solo, Duo, Squad and Clash Squad matches and play mini games. Win coins and withdraw with eSewa.">
+<link rel="canonical" href="https://tournamentsnp.pages.dev/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="TournamentsNP">
+<meta property="og:title" content="TournamentsNP - Free Fire Matches & Mini Games">
 <meta property="og:description" content="Join daily Free Fire matches and mini games in Nepal. Win coins and withdraw with eSewa.">
-<meta property="og:image" content="https://rrrfftournament.netlify.app/logo.png"><meta property="og:url" content="https://rrrfftournament.netlify.app/">
+<meta property="og:image" content="https://tournamentsnp.pages.dev/logo.png"><meta property="og:url" content="https://tournamentsnp.pages.dev/">
 <meta name="twitter:card" content="summary">
-<title>RRR Tournament Nepal - Free Fire Matches & Mini Games</title>
-<link rel="icon" type="image/png" sizes="512x512" href="https://rrrfftournament.netlify.app/favicon.png">
-<link rel="apple-touch-icon" href="https://rrrfftournament.netlify.app/favicon-192.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"RRR Tournament","alternateName":["RRR Tournament Nepal","RRR FF Tournament"],"url":"https://rrrfftournament.netlify.app/"}</script>
+<title>TournamentsNP - Free Fire Matches & Mini Games</title>
+<link rel="icon" type="image/png" sizes="512x512" href="https://tournamentsnp.pages.dev/favicon.png">
+<link rel="apple-touch-icon" href="https://tournamentsnp.pages.dev/favicon-192.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TournamentsNP","alternateName":["Tournaments NP","TournamentsNP Nepal"],"url":"https://tournamentsnp.pages.dev/"}</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script>
@@ -102,8 +102,8 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
 .lgform{margin-top:6px;text-align:left}.lgform .fg{margin-bottom:10px}.lgnote{font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5}.rem{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:2px 0 0}
 .gate{display:none;position:fixed;inset:0;background:rgba(5,8,15,.97);z-index:9000;justify-content:center;align-items:center;overflow:auto}
 :root{--nbot:0px}
-/* Mobile: Netlify's 'Powered by Netlify' badge sits at the bottom-right and covers the Account tab, so lift the tab bar above it. Set --nbot back to 0px once the badge is removed. */
-@media (max-width:700px){:root{--nbot:62px}body:has(#vGamePlay.on) .top,body:has(#vGamePlay.on) .pcnote{display:none}.tabbar{border-radius:18px;border:1px solid var(--line);box-shadow:0 -4px 18px rgba(0,0,0,.5)}}
+/* Mobile: the tab bar floats a little above the bottom edge (no hosting badge on Cloudflare Pages). */
+@media (max-width:700px){:root{--nbot:8px}body:has(#vGamePlay.on) .top,body:has(#vGamePlay.on) .pcnote{display:none}.tabbar{border-radius:18px;border:1px solid var(--line);box-shadow:0 -4px 18px rgba(0,0,0,.5)}}
 .cd{color:#4ade80;font-weight:700;font-size:12px;margin-left:6px}
 .lgnote a{color:var(--g)}
 </style></head>
@@ -149,7 +149,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <input id="refLink" class="fc" readonly style="margin-top:12px" placeholder="Loading your link...">
     <div class="conn"><button onclick="copyRef()"><span>📋</span>Copy link</button><button onclick="shareRef()"><span>📤</span>Share link</button></div>
     <p id="refStat" style="margin-top:10px"></p></div>
-  <div class="card"><h3>Connect with RRR Tournament</h3><p>Share the site, message us or follow us.</p><div class="conn" id="conn"></div></div>
+  <div class="card"><h3>Connect with TournamentsNP</h3><p>Share the site, message us or follow us.</p><div class="conn" id="conn"></div></div>
   <div class="seg"><button id="tabMap" class="on" onclick="setTab('map')">Full Map Rooms</button><button id="tabCS" onclick="setTab('cs')">CS Rooms</button></div>
   <div id="homeList"></div>
 </section>
@@ -171,7 +171,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
     <p class="lgnote" id="wdNote" style="margin-bottom:10px"></p>
     <button class="gbtn" id="uidVerBtn" style="display:none;margin-top:6px" onclick="$('wShot').click()">Verify my UID (upload screenshot)</button>
     <input type="file" id="wShot" accept="image/*" style="display:none" onchange="walletShot(this)"><p class="lgnote" id="wShotMsg" style="margin:8px 0 0"></p>
-    <a class="gbtn" data-support="Hi RRR Tournament support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
+    <a class="gbtn" data-support="Hi TournamentsNP support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
   <div class="card"><h3>Add Coins</h3>
     <p style="margin-bottom:10px">Tap the Add Coins button below to see the e-Sewa QR and pay (minimum 25 NPR), then enter the Reference ID. Coins are added to your wallet within 6-8 hours.</p>
     <button class="gbtn" type="button" id="qrBtn" onclick="toggleQR()" style="margin:0 0 12px">Add Coins</button>
@@ -217,7 +217,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="card"><h3>My History</h3><p>Your matches, payments and withdrawals.</p><button class="gbtn" onclick="openHistory()">View History</button></div>
   <div class="card"><h3>Rules</h3><ol class="rules" id="rulesList"></ol></div>
   <div class="card"><p><a href="terms.html" style="color:var(--g)">Terms &amp; Conditions</a> &nbsp;•&nbsp; <a href="terms.html#refund" style="color:var(--g)">Refund &amp; Withdrawal Policy</a> &nbsp;•&nbsp; <a href="privacy.html" style="color:var(--g)">Privacy Policy</a></p>
-    <a class="gbtn" data-support="Hi RRR Tournament support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
+    <a class="gbtn" data-support="Hi TournamentsNP support, I need help." style="margin-top:12px;text-decoration:none">💬 Contact support</a></div>
 </section>
 <section class="view" id="vHistory">
   <button class="back" onclick="show('vAccount')">← Back</button>
@@ -225,7 +225,7 @@ footer{text-align:center;font-size:12px;color:var(--mut);padding:14px 0}footer a
   <div class="seg"><button id="htm" class="on" onclick="setHist('m')">Matches</button><button id="htp" onclick="setHist('p')">Payments</button><button id="htw" onclick="setHist('w')">Withdrawals</button></div>
   <div id="histBox"></div>
 </section>
-<footer>🔞 18+ only • Play responsibly<br><a href="terms.html">Terms</a> • <a href="terms.html#refund">Refund Policy</a> • <a href="privacy.html">Privacy</a> • <a href="#" data-support="Hi RRR Tournament support, I need help.">Support</a><br>RRR Tournament is not affiliated with Garena or Free Fire.</footer>
+<footer>🔞 18+ only • Play responsibly<br><a href="terms.html">Terms</a> • <a href="terms.html#refund">Refund Policy</a> • <a href="privacy.html">Privacy</a> • <a href="#" data-support="Hi TournamentsNP support, I need help.">Support</a><br>TournamentsNP is not affiliated with Garena or Free Fire.</footer>
 </div>
 
 <div class="tabbar">
@@ -368,7 +368,7 @@ function pwSave(e) {
 
 function share() {
   const u = location.href.split('#')[0];
-  if (navigator.share) navigator.share({title:'RRR Tournament', text:'Join Free Fire matches on RRR Tournament!', url:u}).catch(() => {});
+  if (navigator.share) navigator.share({title:'TournamentsNP', text:'Join Free Fire matches on TournamentsNP!', url:u}).catch(() => {});
   else navigator.clipboard.writeText(u).then(() => alert('Link copied!'));
 }
 function renderConn() {
@@ -551,7 +551,7 @@ function refLink() { return location.origin + location.pathname.replace(/index\.
 function copyRef() { if (!REFCODE) return; navigator.clipboard.writeText(refLink()).then(() => alert('Invite link copied!')); }
 function shareRef() {
   if (!REFCODE) return;
-  if (navigator.share) navigator.share({title:'RRR Tournament', text:'Join Free Fire matches on RRR Tournament and win coins! Use my link:', url: refLink()}).catch(() => {});
+  if (navigator.share) navigator.share({title:'TournamentsNP', text:'Join Free Fire matches on TournamentsNP and win coins! Use my link:', url: refLink()}).catch(() => {});
   else copyRef();
 }
 async function refSync() {
